@@ -28,9 +28,12 @@ Usage:
     EXEC bronze.load_bronze;
 
 Important:
-    BULK INSERT paths are resolved by the SQL Server service. The local paths
-    below reflect the current development environment and must be adapted when
-    the project is run on another machine.
+    BULK INSERT paths are resolved by the SQL Server service. The paths below
+    assume the repository is located at:
+
+        C:\dev\sql-data-engineering-portfolio
+
+    If the repository is stored elsewhere, adapt the file paths accordingly.
 ===============================================================================
 */
 
@@ -67,7 +70,7 @@ BEGIN
         PRINT '>> Inserting Data Into: bronze.crm_cust_info';
 
         BULK INSERT bronze.crm_cust_info
-        FROM 'C:\Users\admin\Desktop\SQL Course\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_crm\cust_info.csv'
+        FROM 'C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\source_crm\cust_info.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -87,7 +90,7 @@ BEGIN
         PRINT '>> Inserting Data Into: bronze.crm_prd_info';
 
         BULK INSERT bronze.crm_prd_info
-        FROM 'C:\Users\admin\Desktop\SQL Course\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_crm\prd_info.csv'
+        FROM 'C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\source_crm\prd_info.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -107,7 +110,7 @@ BEGIN
         PRINT '>> Inserting Data Into: bronze.crm_sales_details';
 
         BULK INSERT bronze.crm_sales_details
-        FROM 'C:\Users\admin\Desktop\SQL Course\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_crm\sales_details.csv'
+        FROM 'C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\source_crm\sales_details.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -131,7 +134,7 @@ BEGIN
         PRINT '>> Inserting Data Into: bronze.erp_loc_a101';
 
         BULK INSERT bronze.erp_loc_a101
-        FROM 'C:\Users\admin\Desktop\SQL Course\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_erp\LOC_A101.csv'
+        FROM 'C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\source_erp\LOC_A101.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -151,7 +154,7 @@ BEGIN
         PRINT '>> Inserting Data Into: bronze.erp_cust_az12';
 
         BULK INSERT bronze.erp_cust_az12
-        FROM 'C:\Users\admin\Desktop\SQL Course\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_erp\CUST_AZ12.csv'
+        FROM 'C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\source_erp\CUST_AZ12.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
@@ -171,7 +174,7 @@ BEGIN
         PRINT '>> Inserting Data Into: bronze.erp_px_cat_g1v2';
 
         BULK INSERT bronze.erp_px_cat_g1v2
-        FROM 'C:\Users\admin\Desktop\SQL Course\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_erp\PX_CAT_G1V2.csv'
+        FROM 'C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\source_erp\PX_CAT_G1V2.csv'
         WITH (
             FIRSTROW = 2,
             FIELDTERMINATOR = ',',
