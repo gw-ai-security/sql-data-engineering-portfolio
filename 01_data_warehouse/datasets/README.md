@@ -27,10 +27,26 @@ datasets/
 | ERP | `LOC_A101.csv` | `bronze.erp_loc_a101` |
 | ERP | `PX_CAT_G1V2.csv` | `bronze.erp_px_cat_g1v2` |
 
-The current repository does not duplicate the full course dataset files. Use the source files supplied with the Data with Baraa project package and place them in the layout above if you want the repository to be self-contained locally.
+## Local setup
 
-## Local SQL Server path
+The full course CSV files are supplied in the Data with Baraa project package. Copy them into the repository folders above before running the Bronze loader.
 
-`BULK INSERT` reads files from the filesystem visible to the **SQL Server service**, not from the SSMS client process. The paths in `scripts/bronze/proc_load_bronze.sql` therefore reflect the current local development environment and must be adapted when the repository is used on another machine.
+The current loader assumes this local repository location:
 
-This is a deployment configuration detail, not a warehouse transformation rule.
+```text
+C:\dev\sql-data-engineering-portfolio\01_data_warehouse\datasets\
+```
+
+Therefore, with the repository cloned to `C:\dev\sql-data-engineering-portfolio`, no additional path change is required after the source CSVs are copied into the expected folders.
+
+If the repository is cloned elsewhere, update the `FROM` paths in:
+
+```text
+scripts/bronze/proc_load_bronze.sql
+```
+
+## SQL Server access requirement
+
+`BULK INSERT` reads files from the filesystem visible to the **SQL Server service**, not from the SSMS client process. The SQL Server service account must therefore have read access to the dataset folders.
+
+This path/access requirement is deployment configuration; it does not change the Bronze transformation rules.
