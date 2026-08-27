@@ -8,7 +8,7 @@ The projects are based on the project sequence taught by **Data with Baraa**, bu
 
 | Project | Focus | Status |
 |---|---|---|
-| [01 — SQL Data Warehouse](01_data_warehouse/) | Data Engineering: CRM + ERP ingestion, Bronze/Silver/Gold architecture, data quality, integration, dimensional modeling | **In progress** |
+| [01 — SQL Data Warehouse](01_data_warehouse/) | Data Engineering: CRM + ERP ingestion, Bronze/Silver/Gold architecture, data quality, integration, dimensional modeling | **In progress — Bronze** |
 | [02 — Exploratory Data Analysis](02_exploratory_data_analysis/) | Data profiling, dimensions, date ranges, measures, magnitude and ranking analysis | Planned |
 | [03 — Advanced Data Analytics](03_advanced_data_analytics/) | Trends, cumulative analysis, performance analysis, segmentation, part-to-whole and reporting views | Planned |
 
@@ -29,17 +29,38 @@ The editable architecture source is maintained in [`01_data_warehouse/docs/data_
 
 ## Current Milestone
 
-The active project is **01 — SQL Data Warehouse**. The following initialization work is complete:
+The active project is **01 — SQL Data Warehouse**.
+
+Completed so far:
 
 - Requirements analyzed and documented.
 - Medallion-style Bronze/Silver/Gold architecture selected.
-- Layer responsibilities defined.
 - High-level architecture created in Draw.io.
-- Detailed implementation plan defined.
-- Project naming conventions defined.
-- Git repository and initial repository structure prepared.
+- Detailed project plan and naming conventions defined.
+- SQL Server `DataWarehouse` database and Bronze/Silver/Gold schemas created.
+- Six source-aligned Bronze tables implemented.
+- CRM and ERP CSV ingestion implemented with `bronze.load_bronze`.
+- Bronze schema validation implemented.
+- Bronze load/reconciliation validation implemented.
+- Source-system inventory and CSV mapping documented.
 
-The next implementation milestone is **Create Database & Schemas**, followed by the Bronze layer.
+**Next milestone:** document the detailed **Source → Bronze data flow** in Draw.io, then close the Bronze epic before starting Silver analysis.
+
+## Bronze Engineering Pattern
+
+```text
+CRM / ERP CSV files
+        ↓
+Source-aligned Bronze DDL
+        ↓
+TRUNCATE TABLE + BULK INSERT
+        ↓
+Schema + load validation
+        ↓
+Data-flow documentation
+```
+
+The loader follows the Data with Baraa course baseline while adding explicit Git-versioned validation and clearer error propagation.
 
 ## Engineering Principles
 
@@ -47,7 +68,7 @@ The next implementation milestone is **Create Database & Schemas**, followed by 
 - **Raw preservation:** source data is preserved before transformation.
 - **Data quality before analytics:** cleansing and validation occur before business consumption.
 - **Consumer contract:** analytical consumers use the Gold layer rather than raw source tables.
-- **Traceability:** requirements, architecture decisions, tests, and implementation artifacts are version-controlled.
+- **Traceability:** requirements, source mappings, architecture decisions, tests, and implementation artifacts are version-controlled.
 - **Incremental project history:** meaningful milestones are committed as the project is built.
 
 ## Repository Structure
@@ -56,17 +77,9 @@ The next implementation milestone is **Create Database & Schemas**, followed by 
 sql-data-engineering-portfolio/
 ├── 01_data_warehouse/
 │   ├── datasets/
-│   │   ├── source_crm/
-│   │   └── source_erp/
 │   ├── docs/
-│   │   ├── data_architecture.drawio
-│   │   ├── project_requirements.md
-│   │   ├── project_plan.md
-│   │   ├── architecture_decisions.md
-│   │   ├── naming_conventions.md
-│   │   ├── data_flow/
-│   │   └── data_model/
 │   ├── scripts/
+│   │   ├── init_database.sql
 │   │   ├── bronze/
 │   │   ├── silver/
 │   │   └── gold/
@@ -94,12 +107,13 @@ sql-data-engineering-portfolio/
 
 ## Documentation
 
-The active warehouse project documentation is located in [`01_data_warehouse/docs/`](01_data_warehouse/docs/):
+The active warehouse documentation is located in [`01_data_warehouse/docs/`](01_data_warehouse/docs/):
 
 - [Project Requirements](01_data_warehouse/docs/project_requirements.md)
 - [Project Plan](01_data_warehouse/docs/project_plan.md)
 - [Architecture Decisions](01_data_warehouse/docs/architecture_decisions.md)
 - [Naming Conventions](01_data_warehouse/docs/naming_conventions.md)
+- [Source Systems](01_data_warehouse/docs/source_systems.md)
 - [Draw.io Architecture](01_data_warehouse/docs/data_architecture.drawio)
 
 ## Attribution
