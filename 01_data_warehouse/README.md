@@ -2,7 +2,7 @@
 
 This project builds a **modern SQL Server data warehouse** that consolidates sales data from two operational source systems — **CRM** and **ERP** — and prepares it for analytical reporting and downstream consumption.
 
-It follows the project scenario and learning sequence from **Data with Baraa's SQL Data Warehouse Project**, while the implementation, architecture documentation, validation evidence, repository structure, and later extensions are maintained as an independent portfolio project.
+It follows the project scenario and implementation sequence from **Data with Baraa's SQL Data Warehouse Project**, while the code, validation evidence, documentation, and selected engineering refinements are maintained as an independent portfolio implementation.
 
 ---
 
@@ -12,64 +12,58 @@ The warehouse uses a Medallion-style architecture with **Bronze**, **Silver**, a
 
 ![SQL Data Warehouse Architecture](docs/data_architecture.webp)
 
+Editable source: [`docs/data_architecture.drawio`](docs/data_architecture.drawio)
+
 ```mermaid
 flowchart LR
-    CRM[CRM\nCSV files] --> B[Bronze Layer\nRaw Data]
-    ERP[ERP\nCSV files] --> B
-    B --> S[Silver Layer\nCleaned & Standardized Data]
-    S --> G[Gold Layer\nBusiness-Ready Data]
+    CRM[CRM CSV files] --> B[Bronze\nRaw source-aligned tables]
+    ERP[ERP CSV files] --> B
+    B --> S[Silver\nCleaned & standardized tables]
+    S --> G[Gold\nBusiness-ready analytical views]
     G --> BI[BI & Reporting]
     G --> SQL[Ad-hoc SQL Queries]
     G --> ML[Machine Learning]
 ```
 
-Editable source: [`docs/data_architecture.drawio`](docs/data_architecture.drawio)
-
 ### Bronze Layer
 
-**Purpose:** preserve source data as-is for traceability and debugging.
+**Purpose:** preserve source data for traceability and downstream quality analysis.
 
 - Object type: SQL tables
 - Processing: batch
-- Load strategy: full load
-- Baseline load method: `TRUNCATE` + `INSERT`
+- Load strategy: full refresh
+- Load method: `TRUNCATE TABLE` + `BULK INSERT`
+- CSV header handling: `FIRSTROW = 2`
+- Field delimiter: comma
 - Transformations: none
 - Data model: source-aligned / as-is
+- Load procedure: `bronze.load_bronze`
 
 ### Silver Layer
 
 **Purpose:** create clean, standardized, analysis-ready source-aligned datasets.
 
-- Object type: SQL tables
-- Processing: batch
-- Load strategy: full load
-- Baseline load method: `TRUNCATE` + `INSERT`
-- Transformations:
-  - data cleansing
-  - standardization
-  - normalization
-  - derived columns
-  - enrichment
-- Data model: remains source-aligned; business modeling is deferred to Gold
+Planned responsibilities include:
+
+- data cleansing
+- standardization
+- normalization
+- data-type correction
+- derived columns
+- enrichment
+- technical warehouse metadata
 
 ### Gold Layer
 
 **Purpose:** expose business-ready analytical data.
 
-- Object type: views
-- Physical load: none in the baseline design
-- Transformations:
-  - data integration
-  - aggregations where required
-  - business rules and logic
-- Data modeling:
-  - star schema
-  - dimensional views
-  - flat or aggregated analytical views when justified
-- Primary consumers:
-  - BI and reporting
-  - ad-hoc SQL analysis
-  - downstream machine-learning workloads
+Planned responsibilities include:
+
+- CRM/ERP data integration
+- business rules
+- dimensions and facts
+- star-schema modeling
+- analytical views and aggregations where required
 
 ---
 
@@ -81,31 +75,139 @@ Develop a modern data warehouse using SQL Server to consolidate sales data, enab
 
 ### Specifications
 
-- **Data Sources:** import data from two source systems, ERP and CRM, provided as CSV files.
+- **Data Sources:** import data from ERP and CRM CSV files.
 - **Data Quality:** cleanse and resolve data-quality issues before analytical use.
 - **Integration:** combine both sources into a single, user-friendly analytical model.
-- **Scope:** focus on the latest dataset; source-record historization is not required for the baseline project.
+- **Scope:** focus on the latest dataset; historization is not required for the baseline project.
 - **Documentation:** provide clear documentation for business stakeholders and analytics users.
 
 Detailed requirements: [`docs/project_requirements.md`](docs/project_requirements.md)
 
 ---
 
+## Source Systems
+
+The Bronze layer ingests six CSV files.
+
+| Source | File | Bronze target |
+|---|---|---|
+| CRM | `cust_info.csv` | `bronze.crm_cust_info` |
+| CRM | `prd_info.csv` | `bronze.crm_prd_info` |
+| CRM | `sales_details.csv` | `bronze.crm_sales_details` |
+| ERP | `CUST_AZ12.csv` | `bronze.erp_cust_az12` |
+| ERP | `LOC_A101.csv` | `bronze.erp_loc_a101` |
+| ERP | `PX_CAT_G1V2.csv` | `bronze.erp_px_cat_g1v2` |
+
+Detailed inventory and row-count notes: [`docs/source_systems.md`](docs/source_systems.md)
+
+Dataset placement notes: [`datasets/README.md`](datasets/README.md)
+
+---
+
+## Bronze Implementation
+
+### 1. Create database and schemas
+
+```text
+scripts/init_database.sql
+```
+
+Creates:
+
+```text
+DataWarehouse
+├── bronze
+├── silver
+└── gold
+```
+
+### 2. Create Bronze tables
+
+```text
+scripts/bronze/ddl_bronze.sql
+```
+
+Creates the six source-aligned Bronze tables. Bronze intentionally avoids primary keys, `NOT NULL` constraints, and business validation that could reject source-quality issues before analysis.
+
+### 3. Create the Bronze loader
+
+```text
+scripts/bronze/proc_load_bronze.sql
+```
+
+The procedure implements the reference-project full-load pattern:
+
+```text
+TRUNCATE TABLE
+      ↓
+BULK INSERT
+```
+
+for every CRM and ERP source file.
+
+Run the loader with:
+
+```sql
+EXEC bronze.load_bronze;
+```
+
+The procedure also records per-table and batch durations and reports errors with `TRY...CATCH` and `THROW`.
+
+### Local path configuration
+
+The current `BULK INSERT` file paths reflect the local development machine. SQL Server must be able to access those paths through the SQL Server service account. When cloning this repository on another machine, adapt the file paths or deploy the CSV files to an equivalent accessible location.
+
+---
+
+## Bronze Validation
+
+Validation is stored separately from implementation code.
+
+### Schema validation
+
+[`tests/bronze/01_validate_bronze_schema.sql`](tests/bronze/01_validate_bronze_schema.sql)
+
+Checks/inspects:
+
+- expected Bronze tables
+- column order
+- SQL data types
+- text lengths
+- source-column nullability
+
+### Load validation
+
+[`tests/bronze/02_validate_bronze_load.sql`](tests/bronze/02_validate_bronze_load.sql)
+
+Checks:
+
+- loaded row counts against the course baseline
+- logical source-row counts for reconciliation context
+- sample field mapping
+- repeatability of the `TRUNCATE + BULK INSERT` full refresh
+
+Two supplied CSV files exhibit an EOF/line-ending edge case under the simple course `BULK INSERT` pattern. The validation documents this explicitly rather than hiding the difference between logical CSV records and the observed course load baseline.
+
+---
+
 ## Architecture Decisions
 
-The current design is intentionally constrained by the project requirements:
+Current accepted decisions include:
 
-1. **SQL Server** is the target warehouse platform.
-2. **Bronze / Silver / Gold** separate ingestion, cleansing, and business consumption responsibilities.
-3. **Batch full loads** are used in the baseline because the project focuses on the latest dataset.
-4. **Historization and CDC are out of scope** for the baseline implementation.
-5. **Gold is the analytical consumer contract**; downstream users should not query raw Bronze data directly.
+1. Microsoft SQL Server and T-SQL.
+2. Bronze / Silver / Gold separation of concerns.
+3. Source fidelity and permissive ingestion in Bronze.
+4. Batch full loads for the baseline.
+5. No warehouse historization/CDC in baseline scope.
+6. `BULK INSERT` for Bronze CSV ingestion.
+7. Gold as the future analytical consumer contract.
+8. Reproducible schema/load validation stored in Git.
 
 Decision log: [`docs/architecture_decisions.md`](docs/architecture_decisions.md)
 
 ---
 
-## Project Plan
+## Project Plan and Current Status
 
 The implementation is managed as six epics:
 
@@ -116,19 +218,29 @@ The implementation is managed as six epics:
 5. Build Silver Layer
 6. Build Gold Layer
 
-Each build epic follows the same engineering pattern:
+Each build epic follows:
 
 ```text
 Analyze → Code → Validate → Document → Commit
 ```
 
-Detailed task plan and current status: [`docs/project_plan.md`](docs/project_plan.md)
+| Epic | Status |
+|---|---|
+| Requirements Analysis | Complete |
+| Design Data Architecture | Complete |
+| Project Initialization | Complete |
+| Bronze — Source Analysis | Complete |
+| Bronze — DDL & Ingestion | Complete |
+| Bronze — Schema/Load Validation | Complete |
+| Bronze — Data Flow Diagram | **Next** |
+| Silver Layer | Not started |
+| Gold Layer | Not started |
+
+Detailed plan: [`docs/project_plan.md`](docs/project_plan.md)
 
 ---
 
 ## Naming Standards
-
-The project defines naming rules before implementation to reduce inconsistency across schemas, tables, columns, procedures, scripts, and documentation.
 
 Core rules:
 
@@ -136,30 +248,12 @@ Core rules:
 - `lower_snake_case`
 - no SQL reserved words as object names
 - Bronze/Silver tables use `<source_system>_<source_entity>`
-- Gold dimensional objects use `dim_` / `fact_` prefixes
-- surrogate keys use the `_key` suffix
-- technical warehouse columns use the `dwh_` prefix
-- layer load procedures follow `load_<layer>`
+- Gold dimensional objects use `dim_` / `fact_`
+- surrogate keys use `_key`
+- technical warehouse columns use `dwh_`
+- load procedures use `load_<layer>`
 
 Full standard: [`docs/naming_conventions.md`](docs/naming_conventions.md)
-
----
-
-## Current Status
-
-| Epic | Status |
-|---|---|
-| Requirements Analysis | Complete |
-| Design Data Architecture | Complete |
-| Project Initialization — Detailed Project Tasks | Complete |
-| Project Initialization — Naming Conventions | Complete |
-| Project Initialization — Git Repo & Structure | Complete |
-| Project Initialization — Create Database & Schemas | **Next** |
-| Build Bronze Layer | Not started |
-| Build Silver Layer | Not started |
-| Build Gold Layer | Not started |
-
-The SQL implementation is intentionally not pre-populated from the reference repository. Scripts will be added as each milestone is implemented and reviewed.
 
 ---
 
@@ -168,6 +262,7 @@ The SQL implementation is intentionally not pre-populated from the reference rep
 ```text
 01_data_warehouse/
 ├── datasets/
+│   ├── README.md
 │   ├── source_crm/
 │   └── source_erp/
 ├── docs/
@@ -177,19 +272,23 @@ The SQL implementation is intentionally not pre-populated from the reference rep
 │   ├── project_plan.md
 │   ├── architecture_decisions.md
 │   ├── naming_conventions.md
+│   ├── source_systems.md
 │   ├── data_flow/
 │   └── data_model/
 ├── scripts/
+│   ├── init_database.sql
 │   ├── bronze/
+│   │   ├── ddl_bronze.sql
+│   │   └── proc_load_bronze.sql
 │   ├── silver/
 │   └── gold/
 └── tests/
     ├── bronze/
+    │   ├── 01_validate_bronze_schema.sql
+    │   └── 02_validate_bronze_load.sql
     ├── silver/
     └── gold/
 ```
-
-Future artifacts such as source-system analysis, data-flow diagrams, data-model diagrams, data catalog, DDL, ETL procedures, and quality checks will be added only when their corresponding project milestone is reached.
 
 ---
 
@@ -207,22 +306,22 @@ Future artifacts such as source-system analysis, data-flow diagrams, data-model 
 
 ## Portfolio Intent
 
-The goal is to demonstrate more than SQL syntax. The repository is designed to show an engineering process that can be discussed in a technical interview:
+The repository is intended to demonstrate an engineering process rather than only SQL syntax:
 
-- translating requirements into architecture decisions
-- separating responsibilities across data layers
-- preserving raw-source traceability
-- implementing and validating ETL logic
-- integrating multiple source systems
-- building a consumer-friendly analytical model
-- documenting design, lineage, data quality, and limitations
-- using Git throughout the implementation lifecycle
+- requirements-to-architecture reasoning
+- separation of warehouse responsibilities
+- source-system analysis
+- source-aligned DDL design
+- reproducible file ingestion
+- data-quality and reconciliation awareness
+- validation before downstream use
+- documentation and version-controlled evidence
 
 ---
 
 ## Attribution
 
-The project scenario, learning sequence, and source datasets are based on **Data with Baraa's SQL Data Warehouse Project**. The implementation and documentation in this repository are maintained as an independent learning and portfolio build. See the repository-level [`ACKNOWLEDGEMENTS.md`](../ACKNOWLEDGEMENTS.md).
+The project scenario, learning sequence, and source datasets are based on **Data with Baraa's SQL Data Warehouse Project**. The implementation and documentation in this repository are maintained as an independent learning and portfolio build. See [`../ACKNOWLEDGEMENTS.md`](../ACKNOWLEDGEMENTS.md).
 
 ## License
 
