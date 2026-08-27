@@ -42,7 +42,9 @@ BEGIN
         @end_time         DATETIME2(3),
         @batch_start_time DATETIME2(3),
         @batch_end_time   DATETIME2(3),
-        @rows_loaded      BIGINT;
+        @rows_loaded      BIGINT,
+        @min_sales_date   DATE = '19000101',
+        @max_sales_date   DATE = '20501231';
 
     BEGIN TRY
 
@@ -213,7 +215,13 @@ BEGIN
         -- ---------------------------------------------------------------------
         -- CRM: Sales Details
         -- Cleansing: key whitespace cleanup, YYYYMMDD -> DATE conversion,
-        --             invalid-price recovery and sales consistency repair.
+        --             business-range validation, invalid-price recovery and
+        --             sales consistency repair.
+        --
+        -- Important: TRY_CONVERT validates whether a value is technically a
+        -- valid SQL date, but it does not know whether a year such as 5489 is
+        -- plausible for this business dataset. Parsed dates are therefore also
+        -- checked against explicit project boundaries.
         -- ---------------------------------------------------------------------
 
         SET @start_time = SYSDATETIME();
@@ -223,7 +231,7 @@ BEGIN
 
         PRINT '>> Inserting Data Into: silver.crm_sales_details';
 
-        ;WITH prepared_sales AS (
+        ;WITH parsed_sales AS (
             SELECT
                 NULLIF(TRIM(sls_ord_num), '') AS sls_ord_num,
                 NULLIF(TRIM(sls_prd_key), '') AS sls_prd_key,
@@ -232,17 +240,42 @@ BEGIN
                     DATE,
                     CONVERT(CHAR(8), NULLIF(sls_order_dt, 0)),
                     112
-                ) AS sls_order_dt,
+                ) AS parsed_order_dt,
                 TRY_CONVERT(
                     DATE,
                     CONVERT(CHAR(8), NULLIF(sls_ship_dt, 0)),
                     112
-                ) AS sls_ship_dt,
+                ) AS parsed_ship_dt,
                 TRY_CONVERT(
                     DATE,
                     CONVERT(CHAR(8), NULLIF(sls_due_dt, 0)),
                     112
-                ) AS sls_due_dt,
+                ) AS parsed_due_dt,
+                sls_sales,
+                sls_quantity,
+                sls_price
+            FROM bronze.crm_sales_details
+        ),
+        prepared_sales AS (
+            SELECT
+                sls_ord_num,
+                sls_prd_key,
+                sls_cust_id,
+                CASE
+                    WHEN parsed_order_dt BETWEEN @min_sales_date AND @max_sales_date
+                        THEN parsed_order_dt
+                    ELSE NULL
+                END AS sls_order_dt,
+                CASE
+                    WHEN parsed_ship_dt BETWEEN @min_sales_date AND @max_sales_date
+                        THEN parsed_ship_dt
+                    ELSE NULL
+                END AS sls_ship_dt,
+                CASE
+                    WHEN parsed_due_dt BETWEEN @min_sales_date AND @max_sales_date
+                        THEN parsed_due_dt
+                    ELSE NULL
+                END AS sls_due_dt,
                 sls_sales,
                 sls_quantity,
                 CASE
@@ -251,7 +284,7 @@ BEGIN
                         THEN sls_sales / NULLIF(sls_quantity, 0)
                     ELSE NULL
                 END AS normalized_price
-            FROM bronze.crm_sales_details
+            FROM parsed_sales
         )
         INSERT INTO silver.crm_sales_details (
             sls_ord_num,
