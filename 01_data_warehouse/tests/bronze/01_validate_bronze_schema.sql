@@ -7,14 +7,16 @@ Purpose:
     column definitions after executing the Bronze DDL script.
 
 Expected:
-    - 6 Bronze tables
+    - 6 Bronze base tables
     - Correct column names and order
     - Correct SQL data types
     - Expected NVARCHAR lengths
-    - Source columns remain nullable in the Bronze layer
+    - Source columns remain nullable in Bronze
 ===============================================================================
 */
 
+USE DataWarehouse;
+GO
 
 -- =============================================================================
 -- 1. Validate Bronze Tables
@@ -29,7 +31,7 @@ SELECT
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_SCHEMA = 'bronze'
 ORDER BY TABLE_NAME;
-
+GO
 
 /* Expected tables:
 
@@ -41,7 +43,6 @@ bronze.erp_loc_a101
 bronze.erp_px_cat_g1v2
 
 */
-
 
 -- =============================================================================
 -- 2. Validate Bronze Column Definitions
@@ -57,3 +58,4 @@ SELECT
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE TABLE_SCHEMA = 'bronze'
 ORDER BY TABLE_NAME, ORDINAL_POSITION;
+GO
