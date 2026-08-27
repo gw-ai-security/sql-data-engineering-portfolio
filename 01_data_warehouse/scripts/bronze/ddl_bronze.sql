@@ -3,15 +3,21 @@
 DDL Script: Create Bronze Tables
 ===============================================================================
 Purpose:
-    Creates all source-aligned tables in the bronze schema.
+    Creates all source-aligned tables in the bronze schema. Existing Bronze
+    tables are dropped before being recreated so the DDL can be rerun during
+    development.
 
 Design principles:
-    - Preserve source structure as closely as possible.
-    - Apply no business transformations in Bronze.
-    - Avoid restrictive constraints that could reject source-quality issues.
-    - Keep the script re-runnable by dropping existing tables first.
+    - Preserve source structure and source-oriented column names.
+    - Apply no cleansing or business transformations in Bronze.
+    - Keep source columns nullable and avoid restrictive constraints that could
+      reject source-quality issues before they are analyzed in Silver.
+    - Keep the Bronze DDL compatible with the Data with Baraa project sequence.
 ===============================================================================
 */
+
+USE DataWarehouse;
+GO
 
 
 -- =============================================================================
@@ -50,8 +56,8 @@ CREATE TABLE bronze.crm_prd_info (
     prd_nm          NVARCHAR(50),
     prd_cost        INT,
     prd_line        NVARCHAR(50),
-    prd_start_dt    DATE,
-    prd_end_dt      DATE
+    prd_start_dt    DATETIME,
+    prd_end_dt      DATETIME
 );
 GO
 
