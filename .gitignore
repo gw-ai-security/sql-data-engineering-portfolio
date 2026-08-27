@@ -1,0 +1,27 @@
+# SQL Server database and backup files
+*.mdf
+*.ldf
+*.ndf
+*.bak
+
+# Local configuration / secrets
+.env
+.env.*
+*.secrets
+secrets/
+
+# IDE / editor
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary / log files
+*.tmp
+*.temp
+*.log
+~$*
