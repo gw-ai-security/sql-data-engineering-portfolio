@@ -17,7 +17,7 @@ The Notion board remains the working project-management view; this file provides
 ### Deliverables
 
 - [`project_requirements.md`](project_requirements.md)
-- Requirements reflected in the architecture and scope decisions
+- Requirements reflected in architecture and scope decisions
 
 ---
 
@@ -30,6 +30,7 @@ The Notion board remains the working project-management view; this file provides
 ### Deliverables
 
 - [`data_architecture.drawio`](data_architecture.drawio)
+- [`data_architecture.webp`](data_architecture.webp)
 - [`architecture_decisions.md`](architecture_decisions.md)
 
 ### Current Architecture
@@ -40,12 +41,6 @@ CRM CSV ─┐
 ERP CSV ─┘
 ```
 
-Layer responsibilities:
-
-- **Bronze:** raw preservation and ingestion
-- **Silver:** cleansing, standardization, normalization, derived columns, enrichment
-- **Gold:** integration, business logic, analytical modeling and serving
-
 ---
 
 ## Epic 3 — Project Initialization
@@ -53,46 +48,68 @@ Layer responsibilities:
 - [x] **Create Detailed Project Tasks (Notion)**
 - [x] **Define Project Naming Conventions**
 - [x] **Create Git Repo & Prepare the Repo Structure**
-- [ ] **Create Database & Schemas**
+- [x] **Create Database & Schemas**
 
-### Deliverables Completed
+### Deliverables
 
 - [`project_plan.md`](project_plan.md)
 - [`naming_conventions.md`](naming_conventions.md)
+- [`../scripts/init_database.sql`](../scripts/init_database.sql)
 - GitHub repository structure
 - Root and project README documentation
 
-### Next Deliverable
-
-Create the SQL Server database and the following schemas:
+The initialization script creates:
 
 ```text
-bronze
-silver
-gold
+DataWarehouse
+├── bronze
+├── silver
+└── gold
 ```
-
-The database-creation script will be added when that task is implemented rather than copied from the reference solution in advance.
 
 ---
 
 ## Epic 4 — Build Bronze Layer
 
-- [ ] **Analysing: Source Systems**
-- [ ] **Coding: Data Ingestion**
-- [ ] **Validating: Data Completeness & Schema Checks**
+- [x] **Analysing: Source Systems**
+- [x] **Coding: Data Ingestion**
+- [x] **Validating: Data Completeness & Schema Checks**
 - [ ] **Document: Draw Data Flow (Draw.io)**
-- [ ] **Commit Code in Git Repo**
+- [ ] **Commit Code in Git Repo — Bronze milestone**
 
-### Planned Evidence
+### Completed Evidence
 
-- source-system/file inventory
-- Bronze table DDL
-- ingestion/loading logic
-- completeness checks
-- schema checks
-- first data-flow diagram
-- milestone commit
+- [`source_systems.md`](source_systems.md) — CRM/ERP file inventory and mappings
+- [`../scripts/bronze/ddl_bronze.sql`](../scripts/bronze/ddl_bronze.sql) — six source-aligned Bronze tables
+- [`../scripts/bronze/proc_load_bronze.sql`](../scripts/bronze/proc_load_bronze.sql) — batch/full-load ingestion procedure
+- [`../tests/bronze/01_validate_bronze_schema.sql`](../tests/bronze/01_validate_bronze_schema.sql) — schema validation
+- [`../tests/bronze/02_validate_bronze_load.sql`](../tests/bronze/02_validate_bronze_load.sql) — row-count, mapping, and repeatability validation
+
+### Current Bronze Design
+
+```text
+CSV sources
+   ↓
+TRUNCATE target
+   ↓
+BULK INSERT
+   ↓
+Bronze source-aligned tables
+```
+
+Loader configuration:
+
+```text
+FIRSTROW = 2
+FIELDTERMINATOR = ','
+TABLOCK
+```
+
+No cleansing or business transformations occur in Bronze.
+
+### Remaining Bronze Work
+
+The next task is to document the source-to-Bronze lineage in Draw.io. After the data-flow artifact is reviewed, the Bronze epic receives its final milestone commit and can be marked complete.
 
 ### Definition of Done
 
@@ -101,8 +118,9 @@ Bronze is accepted only when:
 - every required source file has a defined target table;
 - source data can be loaded reproducibly;
 - raw values are preserved without silent business transformation;
-- row/schema validation is documented;
-- the data flow from source files into Bronze is documented.
+- schema and load validation are documented;
+- the data flow from source files into Bronze is documented;
+- the milestone is committed in Git.
 
 ---
 
@@ -126,16 +144,6 @@ Bronze is accepted only when:
 - data-integration documentation
 - extended lineage/data-flow diagram
 - milestone commit
-
-### Definition of Done
-
-Silver is accepted only when:
-
-- required data-quality issues are identified and addressed;
-- transformation rules are explainable and testable;
-- source relationships remain traceable;
-- technical metadata follows naming standards;
-- correctness checks pass before Gold modeling begins.
 
 ---
 
@@ -162,17 +170,6 @@ Silver is accepted only when:
 - end-to-end data-flow/lineage documentation
 - milestone commit
 
-### Definition of Done
-
-Gold is accepted only when:
-
-- facts and dimensions have explicit business meaning and grain;
-- CRM/ERP integration rules are documented;
-- analytical names are consumer-friendly;
-- key relationships are valid;
-- the model supports downstream EDA and advanced analytics;
-- the data catalog and star-schema documentation are complete.
-
 ---
 
 ## Progress Summary
@@ -181,23 +178,23 @@ Gold is accepted only when:
 |---|---:|
 | Requirements Analysis | 100% |
 | Design Data Architecture | 100% |
-| Project Initialization | 75% |
-| Build Bronze Layer | 0% |
+| Project Initialization | 100% |
+| Build Bronze Layer | 60% |
 | Build Silver Layer | 0% |
 | Build Gold Layer | 0% |
 
-**Current task:** `Create Database & Schemas`
+**Current task:** `Document: Draw Data Flow (Draw.io)`
 
 ---
 
 ## Working Rule
 
-The reference project is used as a learning baseline and later comparison point. Implementation files are not pre-copied into this repository. For each milestone:
+The reference project is used as the learning baseline and comparison point. For each milestone:
 
 1. understand the requirement;
-2. attempt the implementation;
+2. implement the solution;
 3. review correctness and design;
 4. compare with the reference approach;
-5. refine the final solution;
+5. refine the accepted solution;
 6. validate and document it;
-7. commit the accepted milestone.
+7. commit the milestone.
