@@ -325,8 +325,45 @@ You should be able to explain:
 - how Bronze-to-Silver reconciliation changes when deduplication/filtering is intentional;
 - which parts of the current design are appropriate for this project but would need redesign at larger production scale.
 
+## 14. Technical validity is not business validity
+
+The first execution of the optimized Silver quality checks exposed an important edge case in `crm_sales_details`.
+
+One source value was converted successfully to:
+
+```text
+5489-01-01
+```
+
+SQL Server considers that a technically valid `DATE`. `TRY_CONVERT` therefore correctly returns a date instead of `NULL`.
+
+But a sales order in the year 5489 is not plausible for this dataset. The date then failed the logical rule:
+
+```text
+order_date <= ship_date
+order_date <= due_date
+```
+
+This demonstrates that type validation and business-domain validation solve different problems:
+
+```text
+Can SQL represent this value?
+        !=
+Can this value be true in our business domain?
+```
+
+The Silver transformation was therefore refined to apply an explicit project date range after parsing:
+
+```text
+1900-01-01 <= sales date <= 2050-12-31
+```
+
+Values that cannot be parsed **or** fall outside that accepted range become `NULL` and remain visible as data-quality signals.
+
+This is an important engineering lesson: safe parsing prevents technical failures, but domain constraints are still required to prevent syntactically valid nonsense from becoming trusted data.
+
 ## Current Status
 
-The optimized Silver DDL, transformation procedure and quality-check scripts are prepared in the repository.
+The Silver DDL, transformation procedure and quality-check scripts have been executed against the current Bronze data.
 
-They are **not considered accepted evidence until they have been executed against the current Bronze data and the quality/reconciliation checks have been reviewed**.
+The first validation run found one implausible-but-technically-valid sales order date (`5489-01-01`). The transformation and quality checks were refined to enforce an explicit sales-date business range. The Silver layer should be reloaded and the complete validation suite rerun before the phase is accepted.
