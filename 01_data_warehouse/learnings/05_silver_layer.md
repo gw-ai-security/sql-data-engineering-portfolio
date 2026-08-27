@@ -147,7 +147,7 @@ The course checks integer-style sales dates for:
 - incorrect length;
 - values outside an accepted business range.
 
-Our dataset exposed a concrete example: `54890101` can be represented by SQL Server as a valid calendar date, but a sales order in the year 5489 is not plausible for this project.
+Our dataset exposed a concrete example: the raw integer `5489` was accepted by SQL Server's direct character-to-date conversion as `5489-01-01`, but a sales order in the year 5489 is not plausible for this project.
 
 Therefore our Silver load stays close to Baraa's `CASE` + `CAST` approach but adds the same 1900–2050 boundary that he discusses during data-quality analysis to all three sales date fields.
 
@@ -237,6 +237,14 @@ product cat_id    -> ERP category id
 
 These checks are useful because a transformation that looks syntactically correct is not sufficient if it destroys joinability.
 
+The relationship check exposed one dataset-specific source-code mismatch. Seven CRM pedal products use the prefix `CO-PE`, which produces the baseline category key `CO_PE`, while the ERP category master contains `CO_PD` for `Components / Pedals` and no `CO_PE` row. Silver therefore retains the baseline derivation for all products and applies one explicit exception:
+
+```text
+CO_PE -> CO_PD
+```
+
+This is a correction to a derived integration key supported by both source systems, not final CRM/ERP business integration.
+
 ## 15. What a good Data Engineer should be able to explain here
 
 After Silver, you should be able to explain:
@@ -262,6 +270,7 @@ The Silver scripts in the repository have been realigned closely with the Data w
 2. `SET NOCOUNT ON`;
 3. corrected Silver error messaging plus `THROW`;
 4. application of the course's 1900–2050 sales-date boundary to all three sales date columns;
-5. a small expansion of quality checks to cover relationships and transformations actually performed during the course.
+5. the dataset-backed `CO_PE -> CO_PD` correction for the derived product-category key;
+6. a small expansion of quality checks to cover relationships, the `SO69215` regression and transformations actually performed during the course.
 
-The next acceptance step is to rerun the Silver DDL, recreate `silver.load_silver`, execute the load and review all quality checks against the current Bronze data.
+The Silver DDL, stored procedure, full refresh and quality checks were executed successfully against the current local Bronze data on 2026-08-27. The six Silver row counts were 18,484; 397; 60,398; 18,483; 18,484; and 37 in source-table order. All checks documented as "Expectation: No Results" returned zero rows after the category-key correction. The 15 retained birthdates before 1924 remain an informational business-review finding rather than an automatic cleansing rule.

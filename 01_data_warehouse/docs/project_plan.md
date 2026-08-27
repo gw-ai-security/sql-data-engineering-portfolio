@@ -74,8 +74,8 @@ DataWarehouse
 - [x] **Analysing: Source Systems**
 - [x] **Coding: Data Ingestion**
 - [x] **Validating: Data Completeness & Schema Checks**
-- [ ] **Document: Draw Data Flow (Draw.io)**
-- [ ] **Commit Code in Git Repo — Bronze milestone**
+- [x] **Document: Draw Data Flow**
+- [x] **Commit Code in Git Repo — Bronze milestone**
 
 ### Completed Evidence
 
@@ -84,6 +84,7 @@ DataWarehouse
 - [`../scripts/bronze/proc_load_bronze.sql`](../scripts/bronze/proc_load_bronze.sql) — batch/full-load ingestion procedure
 - [`../tests/bronze/01_validate_bronze_schema.sql`](../tests/bronze/01_validate_bronze_schema.sql) — schema validation
 - [`../tests/bronze/02_validate_bronze_load.sql`](../tests/bronze/02_validate_bronze_load.sql) — row-count, mapping, and repeatability validation
+- [`data_flow/bronze_data_flow.webp`](data_flow/bronze_data_flow.webp) — source-to-Bronze lineage diagram
 
 ### Current Bronze Design
 
@@ -109,7 +110,7 @@ No cleansing or business transformations occur in Bronze.
 
 ### Remaining Bronze Work
 
-The next task is to document the source-to-Bronze lineage in Draw.io. After the data-flow artifact is reviewed, the Bronze epic receives its final milestone commit and can be marked complete.
+No technical Bronze milestone work remains. The repository contains the ingestion, validation, documentation and committed data-flow artifact.
 
 ### Definition of Done
 
@@ -126,24 +127,26 @@ Bronze is accepted only when:
 
 ## Epic 5 — Build Silver Layer
 
-- [ ] **Analysing: Explore & Understand Data**
-- [ ] **Document: Draw Data Integration (Draw.io)**
-- [ ] **Coding: Data Cleansing**
-- [ ] **Validating: Data Correctness Checks**
+- [x] **Analysing: Explore & Understand Data**
+- [x] **Document: Draw Data Integration**
+- [x] **Coding: Data Cleansing**
+- [x] **Validating: Data Correctness Checks**
 - [ ] **Document: Extend Data Flow (Draw.io)**
-- [ ] **Commit Code in Git Repo**
+- [x] **Commit Code in Git Repo**
 
-### Planned Evidence
+### Completed Evidence
 
-- source-data profiling notes
-- identified data-quality issues
-- cleansing and standardization rules
-- Silver table DDL
-- Silver loading/transformation procedure
-- correctness checks
-- data-integration documentation
-- extended lineage/data-flow diagram
-- milestone commit
+- [`../learnings/05_silver_layer.md`](../learnings/05_silver_layer.md) — profiling findings, rules and engineering rationale
+- [`../scripts/silver/ddl_silver.sql`](../scripts/silver/ddl_silver.sql) — six Silver tables
+- [`../scripts/silver/proc_load_silver.sql`](../scripts/silver/proc_load_silver.sql) — full-refresh cleansing and standardization
+- [`../tests/silver/quality_checks_silver.sql`](../tests/silver/quality_checks_silver.sql) — correctness and relationship diagnostics
+- [`data_integration/README.md`](data_integration/README.md) and the linked model — Silver key-preparation rules and diagram
+- committed Silver implementation history
+
+### Remaining Silver Work
+
+- extend the detailed data-flow documentation beyond the existing high-level architecture and integration model;
+- preserve an editable diagram source when that artifact is created.
 
 ---
 
@@ -179,11 +182,11 @@ Bronze is accepted only when:
 | Requirements Analysis | 100% |
 | Design Data Architecture | 100% |
 | Project Initialization | 100% |
-| Build Bronze Layer | 60% |
-| Build Silver Layer | 0% |
+| Build Bronze Layer | 100% |
+| Build Silver Layer | 83% |
 | Build Gold Layer | 0% |
 
-**Current task:** `Document: Draw Data Flow (Draw.io)`
+**Current task:** `Document: Extend Silver Data Flow (Draw.io)`
 
 ---
 

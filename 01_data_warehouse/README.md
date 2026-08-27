@@ -43,7 +43,7 @@ flowchart LR
 
 **Purpose:** create clean, standardized, analysis-ready source-aligned datasets.
 
-Planned responsibilities include:
+Implemented responsibilities include:
 
 - data cleansing
 - standardization
@@ -52,6 +52,14 @@ Planned responsibilities include:
 - derived columns
 - enrichment
 - technical warehouse metadata
+
+Implementation artifacts:
+
+- [`scripts/silver/ddl_silver.sql`](scripts/silver/ddl_silver.sql) — six rerunnable source-aligned Silver tables
+- [`scripts/silver/proc_load_silver.sql`](scripts/silver/proc_load_silver.sql) — `silver.load_silver` full-refresh transformations
+- [`tests/silver/quality_checks_silver.sql`](tests/silver/quality_checks_silver.sql) — diagnostic correctness and relationship checks
+
+The implementation stays close to the course baseline. Small evidence-backed refinements reject implausible 1900–2050 sales dates, propagate load errors with `THROW`, and map the observed CRM pedal category code `CO_PE` to ERP's `CO_PD` category key.
 
 ### Gold Layer
 
@@ -232,8 +240,10 @@ Analyze → Code → Validate → Document → Commit
 | Bronze — Source Analysis | Complete |
 | Bronze — DDL & Ingestion | Complete |
 | Bronze — Schema/Load Validation | Complete |
-| Bronze — Data Flow Diagram | **Next** |
-| Silver Layer | Not started |
+| Bronze — Data Flow Diagram | Complete (published artifact) |
+| Silver — Analysis, DDL, Load & Validation | Complete |
+| Silver — Data Integration Diagram | Complete (published artifact) |
+| Silver — Extended Data Flow Diagram | Outstanding |
 | Gold Layer | Not started |
 
 Detailed plan: [`docs/project_plan.md`](docs/project_plan.md)
@@ -252,8 +262,9 @@ Current phase notes:
 2. [Data Architecture](learnings/02_data_architecture.md)
 3. [Project Initialization](learnings/03_project_initialization.md)
 4. [Bronze Layer](learnings/04_bronze_layer.md)
+5. [Silver Layer](learnings/05_silver_layer.md)
 
-The Bronze notes include the operational questions introduced during pipeline development: which stage is running, how long each table and the full batch take, where a failure occurred, how completeness is reconciled, and why successful execution is not sufficient evidence of correct data movement.
+The Bronze notes cover ingestion and reconciliation. The Silver notes cover evidence-driven cleansing, derived keys, date and measure rules, relationship readiness, metadata and failure signaling.
 
 ---
 
@@ -291,26 +302,30 @@ Full standard: [`docs/naming_conventions.md`](docs/naming_conventions.md)
 │   ├── naming_conventions.md
 │   ├── source_systems.md
 │   ├── data_flow/
-│   └── data_model/
+│   └── data_integration/
+│       ├── README.md
+│       └── Data Integration Model.webp
 ├── learnings/
 │   ├── README.md
 │   ├── 01_requirements_analysis.md
 │   ├── 02_data_architecture.md
 │   ├── 03_project_initialization.md
-│   └── 04_bronze_layer.md
+│   ├── 04_bronze_layer.md
+│   └── 05_silver_layer.md
 ├── scripts/
 │   ├── init_database.sql
 │   ├── bronze/
 │   │   ├── ddl_bronze.sql
 │   │   └── proc_load_bronze.sql
-│   ├── silver/
-│   └── gold/
+│   └── silver/
+│       ├── ddl_silver.sql
+│       └── proc_load_silver.sql
 └── tests/
     ├── bronze/
     │   ├── 01_validate_bronze_schema.sql
     │   └── 02_validate_bronze_load.sql
-    ├── silver/
-    └── gold/
+    └── silver/
+        └── quality_checks_silver.sql
 ```
 
 ---

@@ -197,6 +197,19 @@ SELECT
     SUM(CASE WHEN sls_due_dt IS NULL THEN 1 ELSE 0 END) AS null_due_dates
 FROM silver.crm_sales_details;
 
+-- Targeted regression: Bronze contains order-date values 32154 and 5489 for
+-- SO69215. Both must be NULL in Silver; 5489 must not become 5489-01-01.
+-- Expected: 4 rows, including 2 rows with a NULL sls_order_dt.
+SELECT
+    sls_ord_num,
+    sls_prd_key,
+    sls_order_dt,
+    sls_ship_dt,
+    sls_due_dt
+FROM silver.crm_sales_details
+WHERE sls_ord_num = 'SO69215'
+ORDER BY sls_prd_key;
+
 
 -- ====================================================================
 -- Checking 'silver.erp_cust_az12'

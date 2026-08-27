@@ -202,12 +202,27 @@ The supplied source files are not modified in the baseline.
 
 ---
 
+## ADR-012 — Keep Silver source-aligned with minimal data-backed corrections
+
+**Status:** Accepted
+**Phase:** Build Silver Layer
+
+Silver keeps the same six logical source entities as Bronze and uses a full refresh with `TRUNCATE TABLE` followed by transformed `INSERT` statements. It corrects technical data types, standardizes source codes, derives integration-ready keys and adds `dwh_create_date DATETIME2 DEFAULT GETDATE()`.
+
+The implementation follows the Data with Baraa baseline with three small robustness/correctness refinements:
+
+- sales dates outside the accepted 1900–2050 range are mapped to `NULL` for order, ship and due dates;
+- the derived CRM pedal category `CO_PE` is mapped to ERP's observed `CO_PD` (`Components / Pedals`);
+- `SET NOCOUNT ON` and `THROW` preserve a clear caller-visible failure state.
+
+Silver does not create dimensions, facts, cross-source business entities, incremental loading, historization or an external test framework.
+
+---
+
 ## Decisions Not Yet Made
 
 The following decisions remain intentionally deferred until the corresponding implementation phase:
 
-- Silver cleansing rules per column;
-- Silver technical metadata implementation;
 - source precedence rules for conflicting CRM/ERP values;
 - Gold fact-table grain;
 - surrogate-key implementation details;
