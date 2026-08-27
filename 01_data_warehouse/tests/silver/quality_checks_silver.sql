@@ -176,6 +176,17 @@ WITH quality_summary AS (
 
     SELECT
         'silver.crm_sales_details',
+        'sales_date_out_of_business_range',
+        COUNT_BIG(*)
+    FROM silver.crm_sales_details
+    WHERE (sls_order_dt IS NOT NULL AND sls_order_dt NOT BETWEEN '19000101' AND '20501231')
+       OR (sls_ship_dt  IS NOT NULL AND sls_ship_dt  NOT BETWEEN '19000101' AND '20501231')
+       OR (sls_due_dt   IS NOT NULL AND sls_due_dt   NOT BETWEEN '19000101' AND '20501231')
+
+    UNION ALL
+
+    SELECT
+        'silver.crm_sales_details',
         'sales_invalid_date_order',
         COUNT_BIG(*)
     FROM silver.crm_sales_details
@@ -513,6 +524,14 @@ ORDER BY prd_line;
 -- silver.crm_sales_details
 -- =============================================================================
 
+-- Technically valid DATE values can still be implausible for the business.
+-- Expectation: no rows
+SELECT *
+FROM silver.crm_sales_details
+WHERE (sls_order_dt IS NOT NULL AND sls_order_dt NOT BETWEEN '19000101' AND '20501231')
+   OR (sls_ship_dt  IS NOT NULL AND sls_ship_dt  NOT BETWEEN '19000101' AND '20501231')
+   OR (sls_due_dt   IS NOT NULL AND sls_due_dt   NOT BETWEEN '19000101' AND '20501231');
+
 -- Invalid date order
 -- Expectation: no rows
 SELECT *
@@ -536,7 +555,8 @@ WHERE sls_sales IS NULL
    OR sls_sales <> sls_quantity * sls_price
 ORDER BY sls_sales, sls_quantity, sls_price;
 
--- Informational: source dates that could not be converted to valid DATE values
+-- Informational: dates intentionally nulled because the source was zero,
+-- malformed, technically invalid or outside the accepted business range.
 SELECT
     SUM(CASE WHEN sls_order_dt IS NULL THEN 1 ELSE 0 END) AS null_order_dates,
     SUM(CASE WHEN sls_ship_dt IS NULL THEN 1 ELSE 0 END) AS null_ship_dates,
