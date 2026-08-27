@@ -2,7 +2,7 @@
 
 This project builds a **modern SQL Server data warehouse** that consolidates sales data from two operational source systems — **CRM** and **ERP** — and prepares it for analytical reporting and downstream consumption.
 
-It follows the project scenario and implementation sequence from **Data with Baraa's SQL Data Warehouse Project**, while the code, validation evidence, documentation, and selected engineering refinements are maintained as an independent portfolio implementation.
+It follows the project scenario and implementation sequence from **Data with Baraa's SQL Data Warehouse Project**, while the code, validation evidence, documentation, engineering learnings, and selected refinements are maintained as an independent portfolio implementation.
 
 ---
 
@@ -151,7 +151,7 @@ Run the loader with:
 EXEC bronze.load_bronze;
 ```
 
-The procedure also records per-table and batch durations and reports errors with `TRY...CATCH` and `THROW`.
+The procedure also reports the current pipeline stage, measures per-table and total batch duration, and reports errors with `TRY...CATCH` and `THROW`.
 
 ### Local path configuration
 
@@ -240,6 +240,23 @@ Detailed plan: [`docs/project_plan.md`](docs/project_plan.md)
 
 ---
 
+## Engineering Learning Journal
+
+In addition to implementation artifacts, the repository records the **reasoning and engineering lessons** from each completed phase. These notes focus on what a data engineer must understand, verify, communicate, and monitor rather than on tool syntax.
+
+Start here: [`learnings/README.md`](learnings/README.md)
+
+Current phase notes:
+
+1. [Requirements Analysis](learnings/01_requirements_analysis.md)
+2. [Data Architecture](learnings/02_data_architecture.md)
+3. [Project Initialization](learnings/03_project_initialization.md)
+4. [Bronze Layer](learnings/04_bronze_layer.md)
+
+The Bronze notes include the operational questions introduced during pipeline development: which stage is running, how long each table and the full batch take, where a failure occurred, how completeness is reconciled, and why successful execution is not sufficient evidence of correct data movement.
+
+---
+
 ## Naming Standards
 
 Core rules:
@@ -275,6 +292,12 @@ Full standard: [`docs/naming_conventions.md`](docs/naming_conventions.md)
 │   ├── source_systems.md
 │   ├── data_flow/
 │   └── data_model/
+├── learnings/
+│   ├── README.md
+│   ├── 01_requirements_analysis.md
+│   ├── 02_data_architecture.md
+│   ├── 03_project_initialization.md
+│   └── 04_bronze_layer.md
 ├── scripts/
 │   ├── init_database.sql
 │   ├── bronze/
@@ -314,8 +337,10 @@ The repository is intended to demonstrate an engineering process rather than onl
 - source-aligned DDL design
 - reproducible file ingestion
 - data-quality and reconciliation awareness
+- operational observability and error diagnosis
 - validation before downstream use
 - documentation and version-controlled evidence
+- explicit reflection on the engineering decisions behind each phase
 
 ---
 
