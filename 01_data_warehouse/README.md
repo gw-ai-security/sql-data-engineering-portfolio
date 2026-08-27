@@ -10,6 +10,8 @@ It follows the project scenario and learning sequence from **Data with Baraa's S
 
 The warehouse uses a Medallion-style architecture with **Bronze**, **Silver**, and **Gold** layers.
 
+![SQL Data Warehouse Architecture](docs/Data%20Architecture%20Diagramm.webp)
+
 ```mermaid
 flowchart LR
     CRM[CRM\nCSV files] --> B[Bronze Layer\nRaw Data]
