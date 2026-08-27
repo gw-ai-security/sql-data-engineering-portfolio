@@ -107,9 +107,9 @@ WHERE cat_id IS NULL
 -- Checking 'silver.crm_sales_details'
 -- ====================================================================
 
--- Source-date quality checks.
--- The course applies the same rule to order, ship and due dates.
--- Expectation: No Results after excluding values intentionally mapped to NULL.
+-- Source-date profiling.
+-- These queries intentionally show bad Bronze values that Silver must handle.
+-- Returned rows are source-quality findings, not Silver validation failures.
 
 SELECT
     sls_order_dt
@@ -134,6 +134,15 @@ WHERE sls_due_dt <= 0
    OR LEN(sls_due_dt) != 8
    OR sls_due_dt > 20500101
    OR sls_due_dt < 19000101;
+
+-- Verify that non-NULL Silver sales dates are inside the accepted range.
+-- Expectation: No Results
+SELECT
+    *
+FROM silver.crm_sales_details
+WHERE (sls_order_dt IS NOT NULL AND (sls_order_dt < '1900-01-01' OR sls_order_dt > '2050-01-01'))
+   OR (sls_ship_dt  IS NOT NULL AND (sls_ship_dt  < '1900-01-01' OR sls_ship_dt  > '2050-01-01'))
+   OR (sls_due_dt   IS NOT NULL AND (sls_due_dt   < '1900-01-01' OR sls_due_dt   > '2050-01-01'));
 
 -- Check referential integrity of sales product key
 -- Expectation: No Results
