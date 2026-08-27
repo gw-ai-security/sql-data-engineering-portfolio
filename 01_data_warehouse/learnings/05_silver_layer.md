@@ -2,368 +2,266 @@
 
 The Silver layer is where raw source-aligned data becomes **clean, standardized and technically trustworthy** while the original source model remains recognizable.
 
-This phase is not about building the final business model. Cross-source business integration, dimensional modeling and analytical serving remain responsibilities of Gold.
+This phase is not the final business model. Cross-source integration, dimensions, facts, aggregations and analytical serving remain responsibilities of Gold.
 
-## 1. Understand relationships before writing transformations
+## 1. Understand the data before transforming it
 
-Before writing Silver SQL, the important questions are:
-
-- What does each source table represent?
-- What is the grain of each table?
-- Which keys connect tables?
-- Are those keys already compatible?
-- Which keys require normalization before they can be joined?
-- Which source fields contain technical quality problems?
-
-The integration-discovery diagram is therefore not decoration. It is an input to the transformation design.
-
-Examples from this project:
+Baraa's workflow is consistent throughout Silver:
 
 ```text
-crm_sales_details.sls_cust_id
-        -> crm_cust_info.cst_id
+Explore Bronze data
+        ↓
+Detect a concrete quality issue
+        ↓
+Define a transformation rule
+        ↓
+Test the transformed result
+        ↓
+Load Silver
+        ↓
+Run the quality check again
 ```
 
-is directly compatible, while other relationships require preparation:
+The important lesson is that cleansing rules should come from observed source problems and business rules, not from arbitrary assumptions.
+
+## 2. Silver keeps the source model recognizable
+
+The project keeps the same six logical tables in Bronze and Silver.
 
 ```text
-erp_cust_az12.cid
-NASAW00011000
-        -> remove NAS prefix
-AW00011000
-        -> crm_cust_info.cst_key
-```
-
-and:
-
-```text
-erp_loc_a101.cid
-AW-00011000
-        -> remove '-'
-AW00011000
-        -> crm_cust_info.cst_key
-```
-
-A good data engineer identifies these compatibility problems before creating joins or downstream models.
-
-## 2. Silver cleans the source model; it does not replace it
-
-The project deliberately keeps the same six logical source tables in Bronze and Silver.
-
-```text
-Bronze CRM customer -> Silver CRM customer
-Bronze CRM product  -> Silver CRM product
-Bronze CRM sales    -> Silver CRM sales
+bronze.crm_cust_info      -> silver.crm_cust_info
+bronze.crm_prd_info       -> silver.crm_prd_info
+bronze.crm_sales_details  -> silver.crm_sales_details
 ...
 ```
 
-Silver may:
+Silver cleans and prepares data. It does not yet build `dim_customers`, `dim_products` or `fact_sales`.
 
-- remove duplicates;
-- filter technically unusable records;
-- standardize values;
-- correct data types;
-- derive technical columns;
-- enrich records with warehouse metadata;
-- prepare keys for later integration.
+## 3. Primary-key quality comes first
 
-Silver should not yet:
+For customer data, the first important checks are:
 
-- create a customer dimension;
-- create a sales fact table;
-- merge CRM and ERP into business objects;
-- introduce report-specific aggregations.
+- is the candidate key NULL?
+- does the same key occur more than once?
 
-The distinction prevents the cleansing layer from becoming coupled to one analytical use case.
-
-## 3. Data quality rules must be explicit
-
-"Clean the data" is not an implementable requirement.
-
-Each issue needs a concrete rule.
-
-Examples in this project:
+When duplicates exist, Baraa uses the creation date to keep the most recent customer record:
 
 ```text
-Duplicate customer IDs
--> keep the most recent record by cst_create_date
+ROW_NUMBER()
+PARTITION BY cst_id
+ORDER BY cst_create_date DESC
+        ↓
+keep rank = 1
+```
+
+The broader lesson is that deduplication requires an explicit rule for deciding **which record wins**.
+
+## 4. String cleansing should be evidence-driven
+
+The course checks string columns for leading and trailing spaces before applying `TRIM()`.
+
+In this dataset, customer first and last names require trimming, while some other string columns do not.
+
+A good Data Engineer does not transform every string automatically without understanding why.
+
+## 5. Standardization reduces ambiguity
+
+Silver converts source codes into consistent readable values.
+
+Examples:
+
+```text
+S -> Single
+M -> Married
 ```
 
 ```text
-Marital status S / M
--> Single / Married
+F / Female -> Female
+M / Male   -> Male
+other      -> n/a
 ```
 
 ```text
-Invalid or missing product cost
--> standardize to 0 according to project baseline
+M -> Mountain
+R -> Road
+S -> Other Sales
+T -> Touring
 ```
 
-```text
-Sales date stored as YYYYMMDD integer
--> convert to DATE; invalid representations become NULL
-```
+Standardization is valuable because downstream consumers should not repeatedly interpret multiple representations of the same concept.
 
-```text
-Sales amount inconsistent with quantity * price
--> repair using the normalized quantity/price relationship
-```
+## 6. Derived columns can prepare later integration
 
-The engineering value is not the `CASE` statement itself. The important part is that the transformation rule is explainable, testable and reproducible.
-
-## 4. Cleaning one field can affect another field
-
-Data quality rules are often dependent.
-
-For example:
-
-```text
-Sales = Quantity * Price
-```
-
-If `price` is invalid and must first be derived from `sales / quantity`, then recalculating `sales` before normalizing `price` can produce inconsistent results.
-
-Therefore transformation order matters.
-
-Our Silver sales load first derives a normalized price and then uses that normalized value to enforce the sales equation.
-
-General lesson:
-
-> When quality rules depend on each other, define an explicit transformation sequence instead of stacking independent CASE expressions without considering their interaction.
-
-## 5. Prefer safe conversions for dirty source data
-
-Bronze intentionally accepts source representations such as integer-style dates.
-
-A direct `CAST` can terminate a whole load when an apparently valid eight-digit number is not a valid calendar date.
-
-The optimized Silver procedure therefore uses safe date conversion:
-
-```text
-source integer
-    -> TRY_CONVERT(..., style 112)
-    -> valid DATE or NULL
-```
-
-The purpose is not to hide bad data. It is to prevent one malformed source value from causing an uncontrolled conversion error while retaining a detectable quality signal (`NULL`) for validation.
-
-## 6. Derived keys prepare integration without performing integration
-
-The CRM product source contains multiple meanings inside one composite key.
-
-Silver derives:
+The CRM product key contains multiple pieces of information. Silver derives:
 
 ```text
 cat_id
 prd_key
 ```
 
-from the source product key.
+from the original source `prd_key`.
 
-This makes later relationships possible:
-
-```text
-Silver cat_id -> ERP product-category id
-Silver prd_key -> Sales product key
-```
-
-This is still compatible with the Silver contract because the source table remains a product table. We are preparing technical joinability, not yet building a Gold business model.
-
-## 7. Metadata is part of operational traceability
-
-`dwh_create_date` is not business data. It is warehouse-generated metadata.
-
-It answers a different question:
+These fields later enable relationships with:
 
 ```text
-Business date:
-When did the customer/order/product event happen?
-
-Warehouse metadata:
-When did this record enter the Silver layer?
+silver.erp_px_cat_g1v2.id
+silver.crm_sales_details.sls_prd_key
 ```
 
-Metadata can later support:
+This is preparation for integration, not yet the final Gold integration itself.
 
-- troubleshooting;
-- identifying load gaps;
-- pipeline auditing;
-- incremental-load analysis;
-- lineage and operational diagnostics.
+## 7. Data enrichment can add useful information
 
-The important concept is that engineers often add fields that describe the **data pipeline**, not the business entity.
+For product history, the course derives `prd_end_dt` from the next `prd_start_dt` using `LEAD()`.
 
-## 8. Full-load pipelines still need atomicity thinking
+Conceptually:
+
+```text
+current start date
+next start date
+        ↓
+end date = next start date - 1 day
+```
+
+The source does not directly provide that complete information, so Silver enriches the dataset with a useful derived value.
+
+## 8. Business rules matter more than SQL syntax
+
+Sales, quantity and price are related by the rule:
+
+```text
+Sales = Quantity × Price
+```
+
+The source contains NULL, negative and inconsistent values. Baraa explicitly frames the correction rule as something that should come from the business/source experts, not from the Data Engineer inventing semantics alone.
+
+That is a central professional lesson:
+
+> Data Engineers implement business rules; they should not silently invent them.
+
+## 9. Technical validity and business validity are different
+
+The course checks integer-style sales dates for:
+
+- zero or negative values;
+- incorrect length;
+- values outside an accepted business range.
+
+Our dataset exposed a concrete example: `54890101` can be represented by SQL Server as a valid calendar date, but a sales order in the year 5489 is not plausible for this project.
+
+Therefore our Silver load stays close to Baraa's `CASE` + `CAST` approach but adds the same 1900–2050 boundary that he discusses during data-quality analysis to all three sales date fields.
+
+```text
+Can SQL represent the date?
+        !=
+Is the date plausible for this dataset?
+```
+
+## 10. Metadata describes the pipeline, not the business
+
+Every Silver table has:
+
+```text
+dwh_create_date
+```
+
+with a database-generated default timestamp.
+
+It answers:
+
+> When was this row created in the Silver layer?
+
+It does not answer when the underlying business event happened.
+
+This distinction becomes important for debugging, auditing and later incremental-load designs.
+
+## 11. Full refreshes must be rerunnable
 
 The project uses:
 
 ```text
-TRUNCATE Silver
-    -> INSERT transformed Bronze data
+TRUNCATE TABLE
+        ↓
+INSERT transformed Bronze data
 ```
 
-This is simple and appropriate for the project scope, but it introduces a failure question:
+before every Silver load.
 
-> What happens if four Silver tables were refreshed and the fifth table fails?
+This prevents duplicates when the procedure is executed repeatedly and matches the baseline full-load architecture chosen for this project.
 
-Without transactional handling, consumers could observe a partially refreshed layer.
+## 12. Observability should be consistent across layers
 
-Our optimized procedure runs the complete Silver refresh in a transaction and rolls it back if any table load fails.
+Baraa explicitly reuses the Bronze procedure standard in Silver:
 
-This is a deliberate portfolio improvement over the minimum course implementation.
+- current layer and source-system messages;
+- current table being truncated/loaded;
+- per-table load duration;
+- total batch duration;
+- `TRY...CATCH` error information.
 
-Trade-off:
+Our version remains close to that standard. Two small robustness additions are retained:
 
-- atomic refresh improves consistency;
-- long transactions can increase locking and resource usage at production scale.
+- `SET NOCOUNT ON` to suppress unnecessary row-count messages;
+- `THROW` after the error is printed so an external caller can detect that the procedure failed.
 
-Therefore "wrap everything in one transaction" is not a universal rule. The correct strategy depends on volume, concurrency, SLA and recovery design.
+The wider lesson is that pipeline standards should remain consistent across layers instead of evolving independently in each script.
 
-## 9. Observability should follow common standards across layers
+## 13. Successful execution is not proof of good data
 
-A pipeline should make it possible to answer:
+A procedure can execute successfully while the resulting data is still wrong.
 
-- Which table is loading now?
-- How many rows were written?
-- How long did the table take?
-- How long did the complete Silver batch take?
-- Which statement failed?
-- Did the caller receive a real failure signal?
+Silver therefore needs explicit quality checks for:
 
-Our Silver procedure records row counts and millisecond-level durations and re-throws failures after logging diagnostic details.
+- NULL and duplicate keys;
+- unwanted spaces;
+- standardized domain values;
+- invalid date values and date order;
+- sales/quantity/price consistency;
+- relationship integrity between prepared keys.
 
-Millisecond measurement matters in this local project because many loads finish in less than one second; measuring only seconds would repeatedly show `0` and provide little useful information.
+The quality-check file intentionally remains close to the course's exploratory SQL style rather than introducing a separate testing framework at this stage.
 
-A broader lesson from the course is that operational conventions should remain consistent across pipeline layers. If one layer introduces a better logging or error-handling standard, the other layer loaders should eventually be aligned as well.
+## 14. Relationship checks validate integration readiness
 
-## 10. A successful load is not proof of good data
+During the Silver analysis Baraa verifies that prepared keys can actually connect the datasets.
 
-The Silver procedure completing successfully proves only that SQL Server executed the transformations.
-
-It does not prove:
-
-- keys are unique;
-- values are standardized;
-- dates are logically ordered;
-- measures are consistent;
-- derived keys are populated;
-- all intended records reached Silver.
-
-This is why implementation and validation are separate artifacts.
-
-Our Silver checks validate three levels:
+Examples:
 
 ```text
-1. Quality-rule summary
-2. Bronze -> Silver reconciliation
-3. Detailed violating records
+sales.sls_prd_key -> product.prd_key
+sales.sls_cust_id -> customer.cst_id
+erp customer cid  -> CRM cst_key
+erp location cid  -> CRM cst_key
+product cat_id    -> ERP category id
 ```
 
-## 11. Reconciliation must understand transformation semantics
+These checks are useful because a transformation that looks syntactically correct is not sufficient if it destroys joinability.
 
-Simple source-target equality is not always correct.
+## 15. What a good Data Engineer should be able to explain here
 
-For most project tables:
-
-```text
-Bronze rows = Silver rows
-```
-
-But customer cleansing intentionally removes NULL customer IDs and deduplicates customer records.
-
-Therefore the correct expectation is:
-
-```text
-Silver customer rows
-=
-unique non-NULL Bronze customer IDs
-```
-
-A good reconciliation test models what the transformation is supposed to do rather than blindly asserting equal row counts everywhere.
-
-## 12. Quality checks should produce actionable evidence
-
-A large collection of ad-hoc `SELECT` statements is useful during exploration, but difficult to review repeatedly.
-
-Our optimized quality-check script therefore provides:
-
-```text
-check_name | issue_count | PASS / FAIL
-```
-
-first, followed by detailed queries that show violating records.
-
-This separates two questions:
-
-```text
-Did the layer pass?
-```
-
-from:
-
-```text
-Which records caused the failure?
-```
-
-That structure is closer to how automated data-quality systems operate, while remaining pure SQL for this project.
-
-## 13. What a good Data Engineer should be able to explain here
-
-After completing Silver, the important capability is not memorizing the SQL script.
-
-You should be able to explain:
+After Silver, you should be able to explain:
 
 - why Silver exists separately from Bronze and Gold;
-- why the source model remains recognizable;
-- how you discovered the required cleansing rules;
-- why some keys require normalization before later integration;
-- why transformation order matters;
-- why safe casting matters with dirty data;
-- what `dwh_create_date` tells you and what it does not tell you;
-- why a full refresh needs failure/recovery thinking;
-- why successful execution is different from data-quality success;
-- how Bronze-to-Silver reconciliation changes when deduplication/filtering is intentional;
-- which parts of the current design are appropriate for this project but would need redesign at larger production scale.
-
-## 14. Technical validity is not business validity
-
-The first execution of the optimized Silver quality checks exposed an important edge case in `crm_sales_details`.
-
-One source value was converted successfully to:
-
-```text
-5489-01-01
-```
-
-SQL Server considers that a technically valid `DATE`. `TRY_CONVERT` therefore correctly returns a date instead of `NULL`.
-
-But a sales order in the year 5489 is not plausible for this dataset. The date then failed the logical rule:
-
-```text
-order_date <= ship_date
-order_date <= due_date
-```
-
-This demonstrates that type validation and business-domain validation solve different problems:
-
-```text
-Can SQL represent this value?
-        !=
-Can this value be true in our business domain?
-```
-
-The Silver transformation was therefore refined to apply an explicit project date range after parsing:
-
-```text
-1900-01-01 <= sales date <= 2050-12-31
-```
-
-Values that cannot be parsed **or** fall outside that accepted range become `NULL` and remain visible as data-quality signals.
-
-This is an important engineering lesson: safe parsing prevents technical failures, but domain constraints are still required to prevent syntactically valid nonsense from becoming trusted data.
+- how quality problems were discovered before transformation;
+- how duplicate records are resolved and why;
+- why some columns are transformed while others are deliberately left unchanged;
+- how source codes are standardized;
+- why derived keys are required for later integration;
+- why business experts are needed for ambiguous correction rules;
+- why technical date validity is not enough;
+- what `dwh_create_date` represents;
+- why full-load procedures truncate before inserting;
+- why the load procedure and the quality-check script are separate artifacts;
+- why relationship integrity must be tested before Gold integration.
 
 ## Current Status
 
-The Silver DDL, transformation procedure and quality-check scripts have been executed against the current Bronze data.
+The Silver scripts in the repository have been realigned closely with the Data with Baraa reference implementation. The retained changes are intentionally limited to project-safety and correctness improvements that have a clear reason:
 
-The first validation run found one implausible-but-technically-valid sales order date (`5489-01-01`). The transformation and quality checks were refined to enforce an explicit sales-date business range. The Silver layer should be reloaded and the complete validation suite rerun before the phase is accepted.
+1. explicit `USE DataWarehouse` context;
+2. `SET NOCOUNT ON`;
+3. corrected Silver error messaging plus `THROW`;
+4. application of the course's 1900–2050 sales-date boundary to all three sales date columns;
+5. a small expansion of quality checks to cover relationships and transformations actually performed during the course.
+
+The next acceptance step is to rerun the Silver DDL, recreate `silver.load_silver`, execute the load and review all quality checks against the current Bronze data.
