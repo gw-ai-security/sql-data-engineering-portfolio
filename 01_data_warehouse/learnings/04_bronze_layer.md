@@ -391,9 +391,9 @@ Separate what is **environment-specific configuration** from what is **warehouse
 
 ---
 
-## Step 10 — Data lineage is the next Bronze deliverable
+## Step 10 — Data lineage completes the Bronze deliverable
 
-The next project task is to draw the source-to-Bronze data flow.
+The project documents the source-to-Bronze data flow and later extends it through Silver and Gold.
 
 The goal is to make this understandable without opening SQL code:
 

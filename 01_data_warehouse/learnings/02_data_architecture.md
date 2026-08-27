@@ -57,7 +57,7 @@ Purpose:
 - cleanse and standardize data;
 - prepare reliable source-aligned datasets for integration.
 
-Planned responsibilities:
+Responsibilities defined for implementation:
 
 - missing/invalid-value handling;
 - standardization and normalization;
@@ -74,12 +74,12 @@ Purpose:
 - apply business logic;
 - expose a consumer-friendly analytical model.
 
-Planned responsibilities:
+Responsibilities defined for implementation:
 
 - dimensions and facts;
 - star-schema modeling;
 - business rules;
-- analytical views and aggregations.
+- analytical views as the consumer contract.
 
 ## Step 3 — Separation of concerns is an engineering control
 

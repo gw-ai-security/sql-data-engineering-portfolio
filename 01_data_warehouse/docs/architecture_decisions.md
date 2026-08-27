@@ -219,13 +219,33 @@ Silver does not create dimensions, facts, cross-source business entities, increm
 
 ---
 
+## ADR-013 — Expose Gold as a latest-snapshot star schema of views
+
+**Status:** Accepted
+**Phase:** Build Gold Layer
+
+Gold exposes exactly three business-ready SQL Server views:
+
+```text
+gold.dim_customers
+gold.dim_products
+gold.fact_sales
+```
+
+Accepted modeling decisions:
+
+- CUSTOMER and PRODUCT are dimensions; SALES is the fact;
+- the customer dimension is anchored on the CRM customer master and enriched from ERP demographics and location through `LEFT JOIN`s;
+- CRM gender has precedence when known, with ERP as the fallback;
+- the product dimension contains current products only (`prd_end_dt IS NULL`) and consumes category keys already corrected in Silver;
+- the fact preserves the Silver sales-line grain and resolves customer/product surrogate keys through the Gold dimensions;
+- `ROW_NUMBER()` surrogate keys follow the course baseline and are deterministic for the current snapshot because their final ordering keys are unique;
+- quality checks validate business grain, fan-out, fact preservation, dimension connectivity and unchanged Silver measures.
+
+The view-based design avoids a separate Gold loading procedure and is appropriate for the current small latest-snapshot dataset. `ROW_NUMBER()` keys are not durable when the dimension population changes, and view calculations occur at query time; those are documented learning-project limitations rather than reasons to add persistent marts or historical key infrastructure.
+
+---
+
 ## Decisions Not Yet Made
 
-The following decisions remain intentionally deferred until the corresponding implementation phase:
-
-- source precedence rules for conflicting CRM/ERP values;
-- Gold fact-table grain;
-- surrogate-key implementation details;
-- final dimension/fact definitions;
-- Gold integration and referential checks;
-- indexing or performance optimizations beyond the course baseline.
+No decisions required by the current Bronze/Silver/Gold baseline remain open. Production-scale indexing, materialization, incremental loading and durable historical surrogate-key strategies are intentionally outside the project scope.

@@ -131,7 +131,7 @@ Bronze is accepted only when:
 - [x] **Document: Draw Data Integration**
 - [x] **Coding: Data Cleansing**
 - [x] **Validating: Data Correctness Checks**
-- [ ] **Document: Extend Data Flow (Draw.io)**
+- [x] **Document: Extend Data Flow (Draw.io)**
 - [x] **Commit Code in Git Repo**
 
 ### Completed Evidence
@@ -143,35 +143,32 @@ Bronze is accepted only when:
 - [`data_integration/README.md`](data_integration/README.md) and the linked model — Silver key-preparation rules and diagram
 - committed Silver implementation history
 
-### Remaining Silver Work
+### Completed Lineage
 
-- extend the detailed data-flow documentation beyond the existing high-level architecture and integration model;
-- preserve an editable diagram source when that artifact is created.
+- [`data_flow/bronze_silver_gold_data_flow.drawio`](data_flow/bronze_silver_gold_data_flow.drawio) completes editable lineage from sources through Gold.
 
 ---
 
 ## Epic 6 — Build Gold Layer
 
-- [ ] **Analysing: Explore Business Objects**
-- [ ] **Coding: Data Integration**
-- [ ] **Validating: Data Integration Checks**
-- [ ] **Document: Draw Data Model of Star Schema (Draw.io)**
-- [ ] **Document: Create Data Catalog**
-- [ ] **Document: Extend Data Flow (Draw.io)**
-- [ ] **Commit Code in Git Repo**
+- [x] **Analysing: Explore Business Objects**
+- [x] **Coding: Data Integration**
+- [x] **Validating: Data Integration Checks**
+- [x] **Document: Draw Data Model of Star Schema (Draw.io)**
+- [x] **Document: Create Data Catalog**
+- [x] **Document: Extend Data Flow (Draw.io)**
+- [x] **Commit Code in Git Repo**
 
-### Planned Evidence
+### Completed Evidence
 
-- business-entity analysis
-- fact-table grain decision
-- customer/product dimension definitions
-- CRM/ERP integration rules
-- Gold analytical views
-- integration and referential checks
-- star-schema diagram
-- Gold data catalog
-- end-to-end data-flow/lineage documentation
-- milestone commit
+- [`data_integration/README.md`](data_integration/README.md) and the linked discovery model — SALES, PRODUCT and CUSTOMER analysis
+- [`../scripts/gold/ddl_gold.sql`](../scripts/gold/ddl_gold.sql) — two dimensions and one fact as analytical views
+- [`../tests/gold/quality_checks_gold.sql`](../tests/gold/quality_checks_gold.sql) — grain, fan-out, row-preservation and referential checks
+- [`data_model/gold_star_schema.drawio`](data_model/gold_star_schema.drawio) — logical star schema with final columns
+- [`data_catalog/gold_data_catalog.md`](data_catalog/gold_data_catalog.md) — object and column definitions with lineage
+- [`data_flow/bronze_silver_gold_data_flow.drawio`](data_flow/bronze_silver_gold_data_flow.drawio) — end-to-end lineage
+- [`../learnings/06_gold_layer.md`](../learnings/06_gold_layer.md) — Gold engineering learning journal
+- validated local milestone commit
 
 ---
 
@@ -183,10 +180,10 @@ Bronze is accepted only when:
 | Design Data Architecture | 100% |
 | Project Initialization | 100% |
 | Build Bronze Layer | 100% |
-| Build Silver Layer | 83% |
-| Build Gold Layer | 0% |
+| Build Silver Layer | 100% |
+| Build Gold Layer | 100% |
 
-**Current task:** `Document: Extend Silver Data Flow (Draw.io)`
+**Current task:** Project complete; review the validated local Gold milestone before pushing.
 
 ---
 

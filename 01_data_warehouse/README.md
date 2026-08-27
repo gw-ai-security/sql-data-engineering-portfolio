@@ -65,13 +65,27 @@ The implementation stays close to the course baseline. Small evidence-backed ref
 
 **Purpose:** expose business-ready analytical data.
 
-Planned responsibilities include:
+Implemented responsibilities:
 
 - CRM/ERP data integration
-- business rules
-- dimensions and facts
-- star-schema modeling
-- analytical views and aggregations where required
+- documented gender source precedence
+- two dimensions and one fact
+- current-product filtering
+- consumer-friendly naming
+- SQL Server views as the analytical contract
+
+Gold objects:
+
+- `gold.dim_customers` — 18,484 customers
+- `gold.dim_products` — 295 current products
+- `gold.fact_sales` — 60,398 source sales lines
+
+Implementation and validation:
+
+- [`scripts/gold/ddl_gold.sql`](scripts/gold/ddl_gold.sql)
+- [`tests/gold/quality_checks_gold.sql`](tests/gold/quality_checks_gold.sql)
+- [`docs/data_model/gold_star_schema.drawio`](docs/data_model/gold_star_schema.drawio)
+- [`docs/data_catalog/gold_data_catalog.md`](docs/data_catalog/gold_data_catalog.md)
 
 ---
 
@@ -109,6 +123,56 @@ The Bronze layer ingests six CSV files.
 Detailed inventory and row-count notes: [`docs/source_systems.md`](docs/source_systems.md)
 
 Dataset placement notes: [`datasets/README.md`](datasets/README.md)
+
+---
+
+## Final Gold Star Schema
+
+```mermaid
+erDiagram
+    DIM_CUSTOMERS ||--o{ FACT_SALES : customer_key
+    DIM_PRODUCTS ||--o{ FACT_SALES : product_key
+
+    DIM_CUSTOMERS {
+        bigint customer_key PK
+        int customer_id
+        string customer_number
+        string country
+        string gender
+        date birthdate
+    }
+
+    DIM_PRODUCTS {
+        bigint product_key PK
+        int product_id
+        string product_number
+        string category
+        int cost
+        date start_date
+    }
+
+    FACT_SALES {
+        string order_number
+        bigint product_key FK
+        bigint customer_key FK
+        date order_date
+        int sales_amount
+        int quantity
+        int price
+    }
+```
+
+Grain:
+
+- `dim_customers`: one row per CRM customer;
+- `dim_products`: one row per current product (`prd_end_dt IS NULL`);
+- `fact_sales`: one row per unique order/product source sales line.
+
+Gold uses logical relationships in views rather than declared database PK/FK constraints. Runtime checks validate business-key uniqueness, join cardinality, fact preservation and referential integrity.
+
+Detailed model: [`docs/data_model/gold_star_schema.drawio`](docs/data_model/gold_star_schema.drawio)
+
+Column-level lineage: [`docs/data_catalog/gold_data_catalog.md`](docs/data_catalog/gold_data_catalog.md)
 
 ---
 
@@ -208,7 +272,7 @@ Current accepted decisions include:
 4. Batch full loads for the baseline.
 5. No warehouse historization/CDC in baseline scope.
 6. `BULK INSERT` for Bronze CSV ingestion.
-7. Gold as the future analytical consumer contract.
+7. Gold as the implemented analytical consumer contract.
 8. Reproducible schema/load validation stored in Git.
 
 Decision log: [`docs/architecture_decisions.md`](docs/architecture_decisions.md)
@@ -243,8 +307,9 @@ Analyze → Code → Validate → Document → Commit
 | Bronze — Data Flow Diagram | Complete (published artifact) |
 | Silver — Analysis, DDL, Load & Validation | Complete |
 | Silver — Data Integration Diagram | Complete (published artifact) |
-| Silver — Extended Data Flow Diagram | Outstanding |
-| Gold Layer | Not started |
+| Silver — Extended Data Flow Diagram | Complete |
+| Gold — Views & Validation | Complete |
+| Gold — Model, Catalog & Lineage | Complete |
 
 Detailed plan: [`docs/project_plan.md`](docs/project_plan.md)
 
@@ -263,8 +328,9 @@ Current phase notes:
 3. [Project Initialization](learnings/03_project_initialization.md)
 4. [Bronze Layer](learnings/04_bronze_layer.md)
 5. [Silver Layer](learnings/05_silver_layer.md)
+6. [Gold Layer](learnings/06_gold_layer.md)
 
-The Bronze notes cover ingestion and reconciliation. The Silver notes cover evidence-driven cleansing, derived keys, date and measure rules, relationship readiness, metadata and failure signaling.
+The learning path now covers requirements, architecture, initialization, ingestion, cleansing and dimensional integration. The Gold note focuses on business objects, grain, source precedence, cardinality, fact preservation and consumer contracts.
 
 ---
 
@@ -302,31 +368,78 @@ Full standard: [`docs/naming_conventions.md`](docs/naming_conventions.md)
 │   ├── naming_conventions.md
 │   ├── source_systems.md
 │   ├── data_flow/
-│   └── data_integration/
-│       ├── README.md
-│       └── Data Integration Model.webp
+│   │   ├── bronze_data_flow.webp
+│   │   ├── bronze_silver_data_flow.webp
+│   │   └── bronze_silver_gold_data_flow.drawio
+│   ├── data_integration/
+│   │   ├── README.md
+│   │   ├── Data Integration Model.webp
+│   │   └── Business Objects Integration Model.webp
+│   ├── data_model/
+│   │   └── gold_star_schema.drawio
+│   └── data_catalog/
+│       └── gold_data_catalog.md
 ├── learnings/
 │   ├── README.md
 │   ├── 01_requirements_analysis.md
 │   ├── 02_data_architecture.md
 │   ├── 03_project_initialization.md
 │   ├── 04_bronze_layer.md
-│   └── 05_silver_layer.md
+│   ├── 05_silver_layer.md
+│   └── 06_gold_layer.md
 ├── scripts/
 │   ├── init_database.sql
 │   ├── bronze/
 │   │   ├── ddl_bronze.sql
 │   │   └── proc_load_bronze.sql
-│   └── silver/
-│       ├── ddl_silver.sql
-│       └── proc_load_silver.sql
+│   ├── silver/
+│   │   ├── ddl_silver.sql
+│   │   └── proc_load_silver.sql
+│   └── gold/
+│       └── ddl_gold.sql
 └── tests/
     ├── bronze/
     │   ├── 01_validate_bronze_schema.sql
     │   └── 02_validate_bronze_load.sql
-    └── silver/
-        └── quality_checks_silver.sql
+    ├── silver/
+    │   └── quality_checks_silver.sql
+    └── gold/
+        └── quality_checks_gold.sql
 ```
+
+---
+
+## Execution Order
+
+`scripts/init_database.sql` is destructive: it drops and recreates `DataWarehouse`. Use it only for an intentional clean setup.
+
+```sql
+-- 1. Run scripts/init_database.sql only for a clean rebuild.
+-- 2. Run scripts/bronze/ddl_bronze.sql.
+-- 3. Run scripts/bronze/proc_load_bronze.sql, then:
+EXEC bronze.load_bronze;
+
+-- 4. Run scripts/silver/ddl_silver.sql.
+-- 5. Run scripts/silver/proc_load_silver.sql, then:
+EXEC silver.load_silver;
+
+-- 6. Run scripts/gold/ddl_gold.sql.
+-- 7. Run the Bronze, Silver and Gold validation scripts.
+```
+
+Gold is view-based and therefore has no loading stored procedure.
+
+## Known Scope Limitations
+
+- latest-snapshot full loads rather than incremental loading or history;
+- local SQL Server `BULK INSERT` paths require deployment-specific adjustment;
+- two CSV EOF/line-ending differences are documented in Bronze reconciliation;
+- `ROW_NUMBER()` surrogate keys in views are not stable when dimension populations change;
+- Gold is calculated at query time rather than materialized;
+- diagnostic SQL quality checks rather than an external automated framework;
+- no orchestration, persistent monitoring, date dimension, CDC or SCD infrastructure.
+
+These are accepted learning-project constraints, not claims of production readiness.
 
 ---
 

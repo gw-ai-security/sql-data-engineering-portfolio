@@ -19,10 +19,7 @@ The notes follow the actual project phases and are updated as the warehouse is b
 3. [Project Initialization](03_project_initialization.md)
 4. [Bronze Layer](04_bronze_layer.md)
 5. [Silver Layer](05_silver_layer.md)
-
-Future files will be added when the corresponding phases are implemented:
-
-- `06_gold_layer.md`
+6. [Gold Layer](06_gold_layer.md)
 
 ## Core Engineering Mindset
 
@@ -51,6 +48,7 @@ The learning notes refer to concrete project artifacts rather than hypothetical 
 - requirements and architecture decisions in `docs/`;
 - database and layer DDL in `scripts/`;
 - ingestion and transformation procedures in `scripts/bronze/` and `scripts/silver/`;
+- Gold analytical views in `scripts/gold/`;
 - validation queries in `tests/`;
 - diagrams and lineage documentation in `docs/`.
 
