@@ -4,6 +4,10 @@
 *.ndf
 *.bak
 
+# Local course datasets
+01_data_warehouse/datasets/source_crm/*.csv
+01_data_warehouse/datasets/source_erp/*.csv
+
 # Local configuration / secrets
 .env
 .env.*
