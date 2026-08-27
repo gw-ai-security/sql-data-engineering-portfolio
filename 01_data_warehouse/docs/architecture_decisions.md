@@ -1,6 +1,6 @@
 # Architecture Decisions
 
-This document records the architectural decisions that have been made so far for the SQL Data Warehouse project. Decisions are derived from the project requirements and the current project phase; future implementation choices will be added only when the relevant milestone is reached.
+This document records architectural and implementation decisions for the SQL Data Warehouse project. Decisions are derived from the project requirements, the Data with Baraa reference project, and the implementation work completed so far.
 
 ---
 
@@ -9,19 +9,13 @@ This document records the architectural decisions that have been made so far for
 **Status:** Accepted  
 **Phase:** Design Data Architecture
 
-### Context
-
-The project requirement is to build a modern data warehouse in SQL Server and use SQL as the primary implementation language.
-
-### Decision
-
 Use **Microsoft SQL Server** as the database platform and **T-SQL** for warehouse implementation.
 
-### Consequences
+Consequences:
 
-- The project can use SQL Server schemas, views, stored procedures, `BULK INSERT`, and T-SQL-specific functionality.
-- The implementation is intentionally platform-specific at this stage.
-- Portability to PostgreSQL, Snowflake, Databricks, or other platforms is not a baseline requirement.
+- SQL Server schemas represent Bronze, Silver, and Gold.
+- The project can use `BULK INSERT`, stored procedures, views, and T-SQL-specific functionality.
+- Portability to other platforms is not a baseline requirement.
 
 ---
 
@@ -30,53 +24,35 @@ Use **Microsoft SQL Server** as the database platform and **T-SQL** for warehous
 **Status:** Accepted  
 **Phase:** Design Data Architecture
 
-### Context
-
-The project requires raw-source traceability, data cleansing before analysis, integration of CRM and ERP data, and a business-ready analytical model.
-
-### Decision
-
-Use three logical warehouse layers:
-
 ```text
 Sources → Bronze → Silver → Gold → Consumers
 ```
 
-### Rationale
+Responsibilities:
 
-This structure creates clear separation of concerns:
+- **Bronze:** source-aligned raw ingestion and traceability
+- **Silver:** cleansing, standardization, normalization, type correction, and technical enrichment
+- **Gold:** cross-source integration, business rules, dimensional modeling, and analytical serving
 
-- Bronze protects raw source fidelity.
-- Silver owns cleansing and standardization.
-- Gold owns business integration and analytical serving.
-
-The design makes responsibilities easier to understand, test, debug, and document.
+This mirrors the Medallion-style architecture used in the reference project and provides separation of concerns.
 
 ---
 
-## ADR-003 — Preserve raw source data in Bronze
+## ADR-003 — Preserve source fidelity in Bronze
 
 **Status:** Accepted  
-**Phase:** Design Data Architecture
+**Phase:** Design / Bronze
 
-### Decision
+Bronze stores source-oriented structures without cleansing or business transformations.
 
-Bronze stores source data in SQL tables with **no business or cleansing transformations**.
+Consequences:
 
-Source-specific names and structures remain recognizable so that records can be traced back to their original files.
+- source names remain recognizable;
+- source-quality problems are allowed to land in Bronze;
+- Bronze columns remain nullable unless there is a compelling ingestion reason otherwise;
+- primary keys and business validation constraints are intentionally not enforced in the raw layer.
 
-### Rationale
-
-Raw preservation supports:
-
-- traceability;
-- debugging;
-- source-to-target comparison;
-- reproducibility of downstream transformations.
-
-### Consequence
-
-Poor-quality or technically inconvenient source values may intentionally exist in Bronze. Their correction belongs downstream.
+This preserves evidence required for debugging and downstream data-quality analysis.
 
 ---
 
@@ -85,9 +61,7 @@ Poor-quality or technically inconvenient source values may intentionally exist i
 **Status:** Accepted  
 **Phase:** Design Data Architecture
 
-### Decision
-
-Silver is responsible for technical preparation of source-aligned data, including where required:
+Silver owns technical data preparation, including where required:
 
 - cleansing;
 - standardization;
@@ -95,15 +69,9 @@ Silver is responsible for technical preparation of source-aligned data, includin
 - data-type correction;
 - derived columns;
 - enrichment;
-- technical warehouse metadata.
+- warehouse metadata.
 
-### Boundary
-
-Business-facing dimensional modeling and cross-source business logic do **not** belong in Silver.
-
-### Rationale
-
-Keeping Silver source-aligned prevents technical cleansing logic from becoming coupled to a particular report or analytical use case.
+Business-facing dimensional modeling and cross-source business logic remain outside Silver.
 
 ---
 
@@ -112,125 +80,137 @@ Keeping Silver source-aligned prevents technical cleansing logic from becoming c
 **Status:** Accepted  
 **Phase:** Design Data Architecture
 
-### Decision
+Gold exposes business-ready analytical objects for:
 
-Gold exposes **business-ready analytical views** and is the preferred interface for downstream users.
+- BI and reporting;
+- ad-hoc SQL analysis;
+- downstream analytical or machine-learning workloads.
 
-Gold is responsible for:
-
-- CRM/ERP integration;
-- business rules;
-- dimensional modeling;
-- dimensions and facts;
-- analytical aggregations where justified;
-- friendly business-oriented names.
-
-### Consumers
-
-Typical Gold consumers are:
-
-- BI and reporting tools;
-- ad-hoc SQL analysts;
-- downstream analytical or machine-learning processes.
-
-### Consequence
-
-Consumers should not depend directly on Bronze source tables for business reporting.
+Gold is responsible for CRM/ERP integration, business rules, dimensions, facts, and consumer-friendly naming.
 
 ---
 
 ## ADR-006 — Use batch full loads for the baseline
 
 **Status:** Accepted  
-**Phase:** Design Data Architecture
+**Phase:** Requirements / Architecture
 
-### Context
+The project focuses on the latest dataset and does not require historization. Therefore the baseline uses:
 
-The project specification focuses on the latest dataset and explicitly states that historization is not required.
+- batch processing;
+- full source extracts;
+- full Bronze reloads;
+- full Silver reloads;
+- `TRUNCATE` followed by load/insert operations.
 
-### Decision
-
-For the baseline implementation:
-
-- processing is batch-oriented;
-- Bronze uses full reloads;
-- Silver uses full reloads;
-- the baseline reload pattern is `TRUNCATE` + `INSERT`.
-
-### Rationale
-
-This is sufficient for the supplied project scenario and keeps the implementation focused on SQL warehouse fundamentals.
-
-### Consequences
-
-The baseline does not demonstrate:
-
-- CDC;
-- incremental extraction;
-- merge/upsert pipelines;
-- SCD Type 2 history.
-
-These may be evaluated later as explicit extensions, but they are not required to satisfy the current project requirements.
+The baseline intentionally does not implement CDC, incremental extraction, merge/upsert loading, or SCD Type 2 history.
 
 ---
 
-## ADR-007 — Do not implement record historization in the baseline
+## ADR-007 — Do not implement warehouse historization in the baseline
 
 **Status:** Accepted  
 **Phase:** Requirements / Architecture
 
-### Decision
-
-The warehouse represents the latest required business state. Full source-record historization is out of scope.
-
-### Rationale
-
-This decision follows the project specification rather than a technical limitation.
-
-### Important distinction
-
-The project may still contain source attributes that describe dates or historical business events. The excluded capability is warehouse-level tracking of every changed version of a source record.
+The warehouse represents the latest required state. This is a scope decision from the project requirements, not a technical limitation.
 
 ---
 
-## ADR-008 — Use Git as part of the engineering workflow
+## ADR-008 — Use Git throughout the engineering workflow
 
 **Status:** Accepted  
 **Phase:** Project Initialization
 
-### Decision
-
-Version-control code and documentation throughout the project rather than uploading a completed project only at the end.
-
-Each build epic follows the pattern:
+Version-control implementation and documentation throughout the build.
 
 ```text
 Analyze → Code → Validate → Document → Commit
 ```
 
-### Rationale
+This provides traceability, rollback capability, and visible portfolio evidence.
 
-This provides:
+---
 
-- change history;
-- rollback capability;
-- traceable project evidence;
-- a more credible portfolio artifact.
+## ADR-009 — Use source-aligned Bronze DDL
+
+**Status:** Accepted  
+**Phase:** Build Bronze Layer
+
+Six source-aligned tables are created:
+
+```text
+bronze.crm_cust_info
+bronze.crm_prd_info
+bronze.crm_sales_details
+bronze.erp_cust_az12
+bronze.erp_loc_a101
+bronze.erp_px_cat_g1v2
+```
+
+The DDL follows the source structures and the reference project. Product start/end dates use `DATETIME` in Bronze, matching the reference sequence; Silver later converts the analytical representation to `DATE`.
+
+The sales date fields remain `INT` in Bronze because the CRM extract represents them as `YYYYMMDD`-style numeric values and also contains invalid raw representations that must not be silently corrected during ingestion.
+
+---
+
+## ADR-010 — Use `BULK INSERT` for Bronze file ingestion
+
+**Status:** Accepted  
+**Phase:** Build Bronze Layer
+
+The Bronze loader uses SQL Server `BULK INSERT` for all six CSV files with:
+
+```text
+FIRSTROW = 2
+FIELDTERMINATOR = ','
+TABLOCK
+```
+
+Each target is truncated immediately before loading, implementing the project's full-refresh strategy.
+
+The loader is encapsulated in:
+
+```text
+bronze.load_bronze
+```
+
+The procedure measures table-level and total batch duration and uses `TRY...CATCH` plus `THROW` for error visibility.
+
+### Portability constraint
+
+The current `BULK INSERT` paths are local deployment configuration. SQL Server must be able to access the paths through its service account. Another machine must adapt those paths or deploy the source files to an equivalent accessible location.
+
+---
+
+## ADR-011 — Validate Bronze schema and load separately
+
+**Status:** Accepted  
+**Phase:** Build Bronze Layer
+
+Bronze validation is split into two concerns:
+
+1. **Schema validation** — expected tables, columns, SQL data types, lengths, and nullability.
+2. **Load validation** — loaded row counts, sample-field mapping, and full-load repeatability.
+
+This is an extension of the manual schema/count checks shown in the reference project and makes the validation reproducible in Git.
+
+### CSV reconciliation note
+
+For `cust_info.csv` and `CUST_AZ12.csv`, a full CSV parser detects one more logical record than the simple course `BULK INSERT` pattern loads. The repository records both the logical source count and the course load baseline rather than silently treating them as identical.
+
+The supplied source files are not modified in the baseline.
 
 ---
 
 ## Decisions Not Yet Made
 
-The following decisions are intentionally deferred until the corresponding implementation phase:
+The following decisions remain intentionally deferred until the corresponding implementation phase:
 
-- exact Bronze table DDL;
-- source-file ingestion implementation details;
 - Silver cleansing rules per column;
+- Silver technical metadata implementation;
 - source precedence rules for conflicting CRM/ERP values;
 - Gold fact-table grain;
 - surrogate-key implementation details;
 - final dimension/fact definitions;
-- data-quality thresholds and reconciliation checks;
-- indexing or performance optimizations.
-
-Deferring these decisions prevents the architecture document from pretending that implementation analysis has already been completed.
+- Gold integration and referential checks;
+- indexing or performance optimizations beyond the course baseline.
