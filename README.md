@@ -43,6 +43,7 @@ Completed so far:
 - Bronze schema validation implemented.
 - Bronze load/reconciliation validation implemented.
 - Source-system inventory and CSV mapping documented.
+- Phase-based data-engineering learning journal added for Requirements, Architecture, Initialization, and Bronze.
 
 **Next milestone:** document the detailed **Source → Bronze data flow** in Draw.io, then close the Bronze epic before starting Silver analysis.
 
@@ -70,6 +71,7 @@ The loader follows the Data with Baraa course baseline while adding explicit Git
 - **Consumer contract:** analytical consumers use the Gold layer rather than raw source tables.
 - **Traceability:** requirements, source mappings, architecture decisions, tests, and implementation artifacts are version-controlled.
 - **Incremental project history:** meaningful milestones are committed as the project is built.
+- **Engineering reflection:** each warehouse phase records the reasoning, failure modes, operational questions, and qualities expected from a good data engineer.
 
 ## Repository Structure
 
@@ -78,6 +80,12 @@ sql-data-engineering-portfolio/
 ├── 01_data_warehouse/
 │   ├── datasets/
 │   ├── docs/
+│   ├── learnings/
+│   │   ├── README.md
+│   │   ├── 01_requirements_analysis.md
+│   │   ├── 02_data_architecture.md
+│   │   ├── 03_project_initialization.md
+│   │   └── 04_bronze_layer.md
 │   ├── scripts/
 │   │   ├── init_database.sql
 │   │   ├── bronze/
@@ -115,6 +123,8 @@ The active warehouse documentation is located in [`01_data_warehouse/docs/`](01_
 - [Naming Conventions](01_data_warehouse/docs/naming_conventions.md)
 - [Source Systems](01_data_warehouse/docs/source_systems.md)
 - [Draw.io Architecture](01_data_warehouse/docs/data_architecture.drawio)
+
+The phase-based engineering learning journal is maintained separately in [`01_data_warehouse/learnings/`](01_data_warehouse/learnings/). Each of the later SQL projects will receive its own learning path rather than mixing warehouse, EDA, and advanced-analytics lessons together.
 
 ## Attribution
 
