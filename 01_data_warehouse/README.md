@@ -10,7 +10,7 @@ It follows the project scenario and learning sequence from **Data with Baraa's S
 
 The warehouse uses a Medallion-style architecture with **Bronze**, **Silver**, and **Gold** layers.
 
-![SQL Data Warehouse Architecture](docs/Data%20Architecture%20Diagramm.webp)
+![SQL Data Warehouse Architecture](docs/data_architecture.webp)
 
 ```mermaid
 flowchart LR
@@ -172,6 +172,7 @@ The SQL implementation is intentionally not pre-populated from the reference rep
 │   └── source_erp/
 ├── docs/
 │   ├── data_architecture.drawio
+│   ├── data_architecture.webp
 │   ├── project_requirements.md
 │   ├── project_plan.md
 │   ├── architecture_decisions.md
