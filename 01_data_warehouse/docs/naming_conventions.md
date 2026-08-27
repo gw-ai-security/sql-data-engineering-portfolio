@@ -1,6 +1,6 @@
 # Naming Conventions
 
-This document defines the naming standards for the SQL Data Warehouse project. The conventions are established during **Project Initialization** so that schemas, tables, views, columns, stored procedures, files, and documentation remain consistent throughout the project.
+This document defines the naming standards for the SQL Data Warehouse project. The conventions were established during **Project Initialization** so that schemas, tables, views, columns, stored procedures, scripts, files, and documentation remain consistent across the completed implementation.
 
 ---
 
@@ -8,11 +8,11 @@ This document defines the naming standards for the SQL Data Warehouse project. T
 
 ### Language
 
-Use **English** for technical object names and documentation.
+Use **English** for warehouse object names and project documentation.
 
 ### Naming Style
 
-Use **lower snake case**:
+Use **lower snake case** for project-owned technical names:
 
 ```text
 customer_info
@@ -28,20 +28,30 @@ Rules:
 - avoid unexplained abbreviations unless inherited from a source system;
 - avoid SQL reserved words as object names.
 
+### Source-name exception
+
+Upstream filenames and source-oriented identifiers may retain their supplied spelling/casing when required for traceability or filesystem access, for example:
+
+```text
+CUST_AZ12.csv
+LOC_A101.csv
+PX_CAT_G1V2.csv
+```
+
+Warehouse objects created from those sources still follow the project naming standard.
+
 ### Source vs Warehouse Names
 
-The naming strategy depends on the layer:
-
-- **Bronze / Silver:** keep a clear relationship to the source-system structures.
+- **Bronze / Silver:** keep a clear relationship to source-system structures.
 - **Gold:** use friendly, business-oriented names.
 
-This distinction preserves source traceability while keeping the analytical layer easy to consume.
+This preserves source traceability while keeping the analytical layer easy to consume.
 
 ---
 
 ## 2. Schema Names
 
-Warehouse layers are implemented as SQL Server schemas:
+Warehouse layers are SQL Server schemas:
 
 ```text
 bronze
@@ -49,7 +59,7 @@ silver
 gold
 ```
 
-Objects must be schema-qualified in SQL whenever practical:
+Objects should be schema-qualified in SQL:
 
 ```sql
 bronze.crm_cust_info
@@ -61,16 +71,13 @@ gold.dim_customers
 
 ## 3. Bronze Table Naming
 
-### Pattern
+Pattern:
 
 ```text
 <source_system>_<source_entity>
 ```
 
-- `<source_system>` identifies the originating system, such as `crm` or `erp`.
-- `<source_entity>` retains the recognizable source object/file name.
-
-### Examples from the supplied source systems
+Examples:
 
 ```text
 crm_cust_info
@@ -81,15 +88,13 @@ erp_loc_a101
 erp_px_cat_g1v2
 ```
 
-### Rule
-
 Do not replace source-specific entity names with business-friendly names in Bronze. Bronze exists partly for source traceability.
 
 ---
 
 ## 4. Silver Table Naming
 
-Silver remains source-aligned and therefore follows the same table pattern:
+Silver remains source-aligned and follows the same table pattern:
 
 ```text
 <source_system>_<source_entity>
@@ -103,23 +108,21 @@ silver.crm_prd_info
 silver.erp_loc_a101
 ```
 
-The table name remains source-recognizable even when columns are cleansed, standardized, normalized, enriched, or technically extended.
+The table name stays source-recognizable even when columns are cleansed, standardized, normalized, enriched, or technically extended.
 
 ---
 
 ## 5. Gold Object Naming
 
-Gold uses **business-friendly names** rather than source-system technical names.
+Gold uses **business-friendly names** because multiple source systems can contribute to one analytical object.
 
 ### Dimension Views
-
-Pattern:
 
 ```text
 dim_<entity>
 ```
 
-Examples:
+Implemented examples:
 
 ```text
 dim_customers
@@ -128,47 +131,25 @@ dim_products
 
 ### Fact Views
 
-Pattern:
-
 ```text
 fact_<business_process>
 ```
 
-Example:
+Implemented example:
 
 ```text
 fact_sales
 ```
 
-### Reporting Views
-
-If a reusable reporting object is created later, use:
-
-```text
-report_<subject>
-```
-
-Examples:
-
-```text
-report_customers
-report_products
-report_sales_monthly
-```
-
-### Gold Naming Principle
-
-Gold names must be understandable to analytical consumers without requiring knowledge of CRM/ERP source abbreviations.
+Additional prefixes such as `report_` or `agg_` are reserved for future projects only if such objects are actually required. They are not part of the current Data Warehouse scope.
 
 ---
 
 ## 6. Column Naming
 
-### Bronze Columns
+### Bronze
 
-Preserve source column names as closely as practical to retain traceability.
-
-Examples from the source structure include:
+Preserve source column names as closely as practical:
 
 ```text
 cst_id
@@ -179,15 +160,13 @@ cid
 cntry
 ```
 
-Source abbreviations are acceptable in Bronze because they are inherited from upstream systems.
+### Silver
 
-### Silver Columns
+Silver may retain source-oriented names while correcting values/types and adding technical metadata.
 
-Silver may retain source-oriented names while correcting data types and values. New warehouse-generated metadata columns must be clearly distinguishable from source columns.
+### Gold
 
-### Gold Columns
-
-Use friendly, descriptive business names:
+Use friendly business names:
 
 ```text
 customer_id
@@ -206,13 +185,7 @@ Avoid exposing cryptic source abbreviations to analytical consumers unless there
 
 ## 7. Surrogate Keys
 
-Warehouse-generated surrogate keys use the suffix:
-
-```text
-_key
-```
-
-Pattern:
+Warehouse-generated surrogate keys use:
 
 ```text
 <entity>_key
@@ -225,39 +198,25 @@ customer_key
 product_key
 ```
 
-This makes the distinction between warehouse-generated keys and natural/source identifiers explicit.
-
-Example distinction:
-
-```text
-customer_id   -- source/business identifier
-customer_key  -- warehouse-generated surrogate key
-```
+This distinguishes warehouse-generated keys from source/business identifiers such as `customer_id`.
 
 ---
 
 ## 8. Technical / Metadata Columns
 
-Warehouse-generated technical metadata columns use the prefix:
-
-```text
-dwh_
-```
-
-Pattern:
+Warehouse-generated technical metadata uses:
 
 ```text
 dwh_<purpose>
 ```
 
-Examples:
+Implemented example:
 
 ```text
-dwh_load_date
 dwh_create_date
 ```
 
-The prefix communicates that the value was created by the warehouse process rather than supplied by the source system.
+The prefix communicates that the value was generated by the warehouse rather than supplied by the source system.
 
 ---
 
@@ -269,29 +228,22 @@ Layer-loading procedures follow:
 load_<layer>
 ```
 
-Examples:
-
-```text
-load_bronze
-load_silver
-```
-
-When schema-qualified:
+Implemented procedures:
 
 ```text
 bronze.load_bronze
 silver.load_silver
 ```
 
-The exact procedures are created only when the corresponding implementation milestone is reached.
+Gold is view-based in this project and therefore has no `load_gold` procedure.
 
 ---
 
 ## 10. SQL Script Naming
 
-Use descriptive snake-case filenames that communicate responsibility.
+Use descriptive lower-snake-case filenames that communicate responsibility.
 
-Recommended patterns:
+Implemented examples:
 
 ```text
 init_database.sql
@@ -304,13 +256,13 @@ quality_checks_silver.sql
 quality_checks_gold.sql
 ```
 
-The repository structure already provides separate layer directories, so filenames do not need excessive repetition beyond what improves clarity.
+Layer directories already provide context, so filenames should remain concise.
 
 ---
 
 ## 11. Documentation and Diagram Naming
 
-Documentation filenames use lower snake case:
+Project-owned documentation filenames use lower snake case:
 
 ```text
 project_requirements.md
@@ -318,21 +270,23 @@ project_plan.md
 architecture_decisions.md
 naming_conventions.md
 data_architecture.drawio
-data_flow.drawio
-data_model.drawio
-data_catalog.md
+bronze_silver_gold_data_flow.drawio
+data_integration_model.webp
+business_object_integration_model.webp
+gold_star_schema.drawio
+gold_data_catalog.md
 ```
 
-Editable diagram sources should be retained in the repository. Exported images may be added alongside them for GitHub rendering.
+Editable Draw.io sources are retained for the maintained architecture, final lineage, and final Gold data model. Rendered image exports are stored alongside documentation where they improve GitHub readability. Temporary editor backup files are not project artifacts and must not be committed.
 
 ---
 
 ## 12. Naming Review Checklist
 
-Before accepting a new object, verify:
+Before accepting a project-owned object or file, verify:
 
 - [ ] Is the name in English?
-- [ ] Does it use lower snake case?
+- [ ] Does it use lower snake case where the project controls the name?
 - [ ] Is it free of SQL reserved words?
 - [ ] Does its naming match the responsibility of the current layer?
 - [ ] Is the source system identifiable in Bronze/Silver?

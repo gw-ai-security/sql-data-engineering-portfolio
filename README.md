@@ -2,17 +2,19 @@
 
 This repository contains a connected SQL Server portfolio track covering **data warehousing**, **exploratory data analysis**, and **advanced SQL analytics**.
 
-The projects are based on the project sequence taught by **Data with Baraa**, but are implemented, documented, reviewed, and extended as an independent portfolio build. The objective is not to publish a tutorial clone, but to demonstrate a traceable engineering workflow from requirements and architecture through implementation, validation, documentation, and analytics.
+The projects follow the sequence taught by **Data with Baraa**, but are maintained as an independent portfolio implementation with explicit requirements, architecture decisions, validation, documentation, and engineering learnings. The intent is to preserve the course scope while adding only targeted improvements that are supported by the supplied data or improve clarity and testability.
 
 ## Portfolio Track
 
 | Project | Focus | Status |
 |---|---|---|
-| [01 — SQL Data Warehouse](01_data_warehouse/) | Data Engineering: CRM + ERP ingestion, Bronze/Silver/Gold architecture, data quality, integration, dimensional modeling | **In progress — Bronze** |
+| [01 — SQL Data Warehouse](01_data_warehouse/) | CRM + ERP ingestion, Bronze/Silver/Gold architecture, data quality, integration, dimensional modeling and lineage | **Complete** |
 | [02 — Exploratory Data Analysis](02_exploratory_data_analysis/) | Data profiling, dimensions, date ranges, measures, magnitude and ranking analysis | Planned |
 | [03 — Advanced Data Analytics](03_advanced_data_analytics/) | Trends, cumulative analysis, performance analysis, segmentation, part-to-whole and reporting views | Planned |
 
-## End-to-End Flow
+## Completed Data Warehouse
+
+The first project implements the complete course warehouse flow:
 
 ```mermaid
 flowchart LR
@@ -25,53 +27,30 @@ flowchart LR
     G --> ML[Machine Learning]
 ```
 
-The editable architecture source is maintained in [`01_data_warehouse/docs/data_architecture.drawio`](01_data_warehouse/docs/data_architecture.drawio).
+The completed warehouse includes:
 
-## Current Milestone
+- requirements and architecture decisions;
+- SQL Server Bronze/Silver/Gold schemas;
+- six source-aligned Bronze tables and `bronze.load_bronze`;
+- six cleansed Silver tables and `silver.load_silver`;
+- Bronze, Silver and Gold quality checks;
+- Gold views `dim_customers`, `dim_products`, and `fact_sales`;
+- source-to-Gold lineage, integration documentation and a star-schema model;
+- a column-level Gold data catalog;
+- a phase-based engineering learning journal.
 
-The active project is **01 — SQL Data Warehouse**.
+Runtime evidence recorded in the project documentation shows the validated Gold snapshot at **18,484 customers**, **295 current products**, and **60,398 sales lines**.
 
-Completed so far:
-
-- Requirements analyzed and documented.
-- Medallion-style Bronze/Silver/Gold architecture selected.
-- High-level architecture created in Draw.io.
-- Detailed project plan and naming conventions defined.
-- SQL Server `DataWarehouse` database and Bronze/Silver/Gold schemas created.
-- Six source-aligned Bronze tables implemented.
-- CRM and ERP CSV ingestion implemented with `bronze.load_bronze`.
-- Bronze schema validation implemented.
-- Bronze load/reconciliation validation implemented.
-- Source-system inventory and CSV mapping documented.
-- Phase-based data-engineering learning journal added for Requirements, Architecture, Initialization, and Bronze.
-
-**Next milestone:** document the detailed **Source → Bronze data flow** in Draw.io, then close the Bronze epic before starting Silver analysis.
-
-## Bronze Engineering Pattern
-
-```text
-CRM / ERP CSV files
-        ↓
-Source-aligned Bronze DDL
-        ↓
-TRUNCATE TABLE + BULK INSERT
-        ↓
-Schema + load validation
-        ↓
-Data-flow documentation
-```
-
-The loader follows the Data with Baraa course baseline while adding explicit Git-versioned validation and clearer error propagation.
+Start with the [Data Warehouse project README](01_data_warehouse/README.md) or the [documentation index](01_data_warehouse/docs/README.md).
 
 ## Engineering Principles
 
-- **Separation of concerns:** ingestion, cleansing, integration, modeling, and consumption have explicit responsibilities.
-- **Raw preservation:** source data is preserved before transformation.
-- **Data quality before analytics:** cleansing and validation occur before business consumption.
-- **Consumer contract:** analytical consumers use the Gold layer rather than raw source tables.
-- **Traceability:** requirements, source mappings, architecture decisions, tests, and implementation artifacts are version-controlled.
-- **Incremental project history:** meaningful milestones are committed as the project is built.
-- **Engineering reflection:** each warehouse phase records the reasoning, failure modes, operational questions, and qualities expected from a good data engineer.
+- **Separation of concerns:** Bronze preserves, Silver cleans and standardizes, Gold integrates and serves.
+- **Data quality before analytics:** each layer is validated before downstream use.
+- **Traceability:** source mappings, decisions, lineage and tests are version-controlled.
+- **Explicit analytical grain:** dimensions and facts are validated for cardinality and row preservation.
+- **Scope discipline:** the project stays within the SQL Server learning scenario rather than adding unrelated tooling.
+- **Engineering reflection:** each warehouse phase records the reasoning and failure modes behind the implementation.
 
 ## Repository Structure
 
@@ -80,12 +59,19 @@ sql-data-engineering-portfolio/
 ├── 01_data_warehouse/
 │   ├── datasets/
 │   ├── docs/
+│   │   ├── README.md
+│   │   ├── data_flow/
+│   │   ├── data_integration/
+│   │   ├── data_model/
+│   │   └── data_catalog/
 │   ├── learnings/
 │   │   ├── README.md
 │   │   ├── 01_requirements_analysis.md
 │   │   ├── 02_data_architecture.md
 │   │   ├── 03_project_initialization.md
-│   │   └── 04_bronze_layer.md
+│   │   ├── 04_bronze_layer.md
+│   │   ├── 05_silver_layer.md
+│   │   └── 06_gold_layer.md
 │   ├── scripts/
 │   │   ├── init_database.sql
 │   │   ├── bronze/
@@ -111,24 +97,24 @@ sql-data-engineering-portfolio/
 - CSV source files
 - Git / GitHub
 - diagrams.net / Draw.io
-- Notion for project planning
 
-## Documentation
+## Data Warehouse Documentation
 
-The active warehouse documentation is located in [`01_data_warehouse/docs/`](01_data_warehouse/docs/):
+Key entry points:
 
-- [Project Requirements](01_data_warehouse/docs/project_requirements.md)
-- [Project Plan](01_data_warehouse/docs/project_plan.md)
-- [Architecture Decisions](01_data_warehouse/docs/architecture_decisions.md)
-- [Naming Conventions](01_data_warehouse/docs/naming_conventions.md)
-- [Source Systems](01_data_warehouse/docs/source_systems.md)
-- [Draw.io Architecture](01_data_warehouse/docs/data_architecture.drawio)
-
-The phase-based engineering learning journal is maintained separately in [`01_data_warehouse/learnings/`](01_data_warehouse/learnings/). Each of the later SQL projects will receive its own learning path rather than mixing warehouse, EDA, and advanced-analytics lessons together.
+- [Project README](01_data_warehouse/README.md)
+- [Documentation index](01_data_warehouse/docs/README.md)
+- [Project requirements](01_data_warehouse/docs/project_requirements.md)
+- [Architecture decisions](01_data_warehouse/docs/architecture_decisions.md)
+- [Naming conventions](01_data_warehouse/docs/naming_conventions.md)
+- [End-to-end lineage](01_data_warehouse/docs/data_flow/bronze_silver_gold_data_flow.drawio)
+- [Gold star schema](01_data_warehouse/docs/data_model/gold_star_schema.drawio)
+- [Gold data catalog](01_data_warehouse/docs/data_catalog/gold_data_catalog.md)
+- [Engineering learning journal](01_data_warehouse/learnings/README.md)
 
 ## Attribution
 
-The learning baseline, project scenario, and source datasets originate from **Data with Baraa's SQL course and project materials**. This repository documents my own implementation process, architecture reasoning, validation work, documentation, and later portfolio extensions. See [`ACKNOWLEDGEMENTS.md`](ACKNOWLEDGEMENTS.md).
+The learning baseline, project scenario, and source datasets originate from **Data with Baraa's SQL course and project materials**. This repository documents an independent implementation process, validation work, documentation, and targeted refinements. See [`ACKNOWLEDGEMENTS.md`](ACKNOWLEDGEMENTS.md).
 
 ## License
 

@@ -1,12 +1,12 @@
 # Project Plan
 
-This document mirrors the implementation plan used to manage the SQL Data Warehouse project. The plan is organized into six epics and follows the same engineering cycle throughout the build:
+This document mirrors the implementation plan used to manage the SQL Data Warehouse project. The completed build is organized into six epics and follows the same engineering cycle throughout:
 
 ```text
 Analyze → Code → Validate → Document → Commit
 ```
 
-The Notion board remains the working project-management view; this file provides a version-controlled snapshot of the plan and current milestone status.
+The Notion board was used as the working project-management view during implementation; this file is the version-controlled completion record and evidence index.
 
 ---
 
@@ -33,7 +33,7 @@ The Notion board remains the working project-management view; this file provides
 - [`data_architecture.webp`](data_architecture.webp)
 - [`architecture_decisions.md`](architecture_decisions.md)
 
-### Current Architecture
+### Final Architecture
 
 ```text
 CRM CSV ─┐
@@ -84,9 +84,9 @@ DataWarehouse
 - [`../scripts/bronze/proc_load_bronze.sql`](../scripts/bronze/proc_load_bronze.sql) — batch/full-load ingestion procedure
 - [`../tests/bronze/01_validate_bronze_schema.sql`](../tests/bronze/01_validate_bronze_schema.sql) — schema validation
 - [`../tests/bronze/02_validate_bronze_load.sql`](../tests/bronze/02_validate_bronze_load.sql) — row-count, mapping, and repeatability validation
-- [`data_flow/bronze_data_flow.webp`](data_flow/bronze_data_flow.webp) — source-to-Bronze lineage diagram
+- [`data_flow/bronze_data_flow.webp`](data_flow/bronze_data_flow.webp) — source-to-Bronze lineage
 
-### Current Bronze Design
+### Accepted Bronze Design
 
 ```text
 CSV sources
@@ -108,21 +108,6 @@ TABLOCK
 
 No cleansing or business transformations occur in Bronze.
 
-### Remaining Bronze Work
-
-No technical Bronze milestone work remains. The repository contains the ingestion, validation, documentation and committed data-flow artifact.
-
-### Definition of Done
-
-Bronze is accepted only when:
-
-- every required source file has a defined target table;
-- source data can be loaded reproducibly;
-- raw values are preserved without silent business transformation;
-- schema and load validation are documented;
-- the data flow from source files into Bronze is documented;
-- the milestone is committed in Git.
-
 ---
 
 ## Epic 5 — Build Silver Layer
@@ -136,16 +121,13 @@ Bronze is accepted only when:
 
 ### Completed Evidence
 
-- [`../learnings/05_silver_layer.md`](../learnings/05_silver_layer.md) — profiling findings, rules and engineering rationale
+- [`../learnings/05_silver_layer.md`](../learnings/05_silver_layer.md) — profiling findings, transformation rules and engineering rationale
 - [`../scripts/silver/ddl_silver.sql`](../scripts/silver/ddl_silver.sql) — six Silver tables
 - [`../scripts/silver/proc_load_silver.sql`](../scripts/silver/proc_load_silver.sql) — full-refresh cleansing and standardization
 - [`../tests/silver/quality_checks_silver.sql`](../tests/silver/quality_checks_silver.sql) — correctness and relationship diagnostics
-- [`data_integration/README.md`](data_integration/README.md) and the linked model — Silver key-preparation rules and diagram
-- committed Silver implementation history
-
-### Completed Lineage
-
-- [`data_flow/bronze_silver_gold_data_flow.drawio`](data_flow/bronze_silver_gold_data_flow.drawio) completes editable lineage from sources through Gold.
+- [`data_integration/README.md`](data_integration/README.md) — integration-key preparation and business-object context
+- [`data_integration/data_integration_model.webp`](data_integration/data_integration_model.webp) — source integration model
+- [`data_flow/bronze_silver_data_flow.webp`](data_flow/bronze_silver_data_flow.webp) — extended Silver lineage
 
 ---
 
@@ -161,18 +143,17 @@ Bronze is accepted only when:
 
 ### Completed Evidence
 
-- [`data_integration/README.md`](data_integration/README.md) and the linked discovery model — SALES, PRODUCT and CUSTOMER analysis
-- [`../scripts/gold/ddl_gold.sql`](../scripts/gold/ddl_gold.sql) — two dimensions and one fact as analytical views
+- [`data_integration/README.md`](data_integration/README.md) and [`data_integration/business_object_integration_model.webp`](data_integration/business_object_integration_model.webp) — SALES, PRODUCT and CUSTOMER business-object discovery
+- [`../scripts/gold/ddl_gold.sql`](../scripts/gold/ddl_gold.sql) — `dim_customers`, `dim_products` and `fact_sales` views
 - [`../tests/gold/quality_checks_gold.sql`](../tests/gold/quality_checks_gold.sql) — grain, fan-out, row-preservation and referential checks
-- [`data_model/gold_star_schema.drawio`](data_model/gold_star_schema.drawio) — logical star schema with final columns
-- [`data_catalog/gold_data_catalog.md`](data_catalog/gold_data_catalog.md) — object and column definitions with lineage
-- [`data_flow/bronze_silver_gold_data_flow.drawio`](data_flow/bronze_silver_gold_data_flow.drawio) — end-to-end lineage
+- [`data_model/gold_star_schema.drawio`](data_model/gold_star_schema.drawio) and [`data_model/gold_star_schema.webp`](data_model/gold_star_schema.webp) — logical Star Schema
+- [`data_catalog/gold_data_catalog.md`](data_catalog/gold_data_catalog.md) — object/column definitions and lineage
+- [`data_flow/bronze_silver_gold_data_flow.drawio`](data_flow/bronze_silver_gold_data_flow.drawio) and [`data_flow/bronze_silver_gold_data_flow.webp`](data_flow/bronze_silver_gold_data_flow.webp) — final end-to-end lineage
 - [`../learnings/06_gold_layer.md`](../learnings/06_gold_layer.md) — Gold engineering learning journal
-- validated local milestone commit
 
 ---
 
-## Progress Summary
+## Final Progress Summary
 
 | Epic | Progress |
 |---|---:|
@@ -183,7 +164,9 @@ Bronze is accepted only when:
 | Build Silver Layer | 100% |
 | Build Gold Layer | 100% |
 
-**Current task:** Project complete; review the validated local Gold milestone before pushing.
+**Current status:** Data Warehouse project complete. Final repository QA has aligned documentation, naming, structure and published artifacts with the implemented state.
+
+**Next portfolio milestone:** Project 02 — Exploratory Data Analysis.
 
 ---
 
@@ -195,6 +178,6 @@ The reference project is used as the learning baseline and comparison point. For
 2. implement the solution;
 3. review correctness and design;
 4. compare with the reference approach;
-5. refine the accepted solution;
-6. validate and document it;
+5. refine only where the data or engineering evidence justifies it;
+6. validate and document the accepted state;
 7. commit the milestone.

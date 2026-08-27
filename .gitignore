@@ -24,8 +24,9 @@ secrets/
 Thumbs.db
 Desktop.ini
 
-# Temporary / log files
+# Temporary / log / editor-backup files
 *.tmp
 *.temp
 *.log
+*.bkp
 ~$*

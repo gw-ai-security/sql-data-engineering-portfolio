@@ -1,16 +1,16 @@
 # Data Warehouse Learning Journal
 
-This folder records the **engineering lessons** learned while implementing the SQL Data Warehouse project.
+This folder records the **engineering lessons** from the completed SQL Data Warehouse project.
 
-The purpose is not to document tools or reproduce course notes. It captures the reasoning that matters in real data-engineering work:
+The purpose is not to document tools or reproduce course notes. It captures the reasoning that matters in data-engineering work:
 
-- what problem a phase is solving;
+- what problem each phase solves;
 - what decisions must be made before writing code;
 - what can go wrong even when SQL executes successfully;
 - what must be observable and testable;
 - what a good data engineer should ask, verify, document, and communicate.
 
-The notes follow the actual project phases and are updated as the warehouse is built.
+The notes follow the six completed project phases and reference the actual repository artifacts.
 
 ## Learning Path
 
@@ -41,15 +41,24 @@ Version the accepted state
 
 A working query is not enough. A data engineer is responsible for whether the right data arrives, whether it is complete, whether downstream users can trust it, whether failures can be diagnosed, and whether another engineer can understand the system later.
 
+## What the Completed Path Covers
+
+- **Requirements:** architecture should follow the actual business and scope constraints.
+- **Architecture:** layer responsibilities must be explicit to avoid duplicated logic.
+- **Initialization:** standards, repository structure and safe database setup are engineering work, not administration overhead.
+- **Bronze:** ingestion must preserve source fidelity, be repeatable, observable and reconcilable.
+- **Silver:** technical validity is not enough; data must also be plausible, standardized and join-ready.
+- **Gold:** source tables become business objects with explicit grain, source precedence, dimensional relationships and a consumer contract.
+
 ## Evidence in This Repository
 
-The learning notes refer to concrete project artifacts rather than hypothetical examples:
+The learning notes refer to concrete artifacts rather than hypothetical examples:
 
-- requirements and architecture decisions in `docs/`;
-- database and layer DDL in `scripts/`;
-- ingestion and transformation procedures in `scripts/bronze/` and `scripts/silver/`;
+- requirements and architecture decisions in [`../docs/`](../docs/);
+- database and layer SQL in [`../scripts/`](../scripts/);
+- Bronze/Silver transformation procedures in `scripts/bronze/` and `scripts/silver/`;
 - Gold analytical views in `scripts/gold/`;
-- validation queries in `tests/`;
-- diagrams and lineage documentation in `docs/`.
+- validation queries in [`../tests/`](../tests/);
+- architecture, lineage, integration, model and catalog documentation in [`../docs/README.md`](../docs/README.md).
 
 The repository therefore contains both **what was built** and **what was learned from building it**.

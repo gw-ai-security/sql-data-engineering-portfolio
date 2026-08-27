@@ -36,6 +36,7 @@ The source datasets represent the latest available state required for the projec
 Import the CRM and ERP CSV datasets into SQL Server.
 
 **Acceptance intent:**
+
 - all required source files can be represented in the warehouse;
 - the raw data remains traceable to its source system;
 - ingestion does not silently transform source values in the raw layer.
@@ -60,6 +61,7 @@ Expected transformation categories include, where required by the source data:
 Combine information from both source systems into a coherent, user-friendly analytical model.
 
 **Acceptance intent:**
+
 - related business entities from CRM and ERP can be connected;
 - downstream users do not need to understand source-specific technical structures to query business-ready data;
 - integration rules are explicit and testable.
@@ -123,12 +125,13 @@ The following constraints are part of the baseline project design:
 - Target platform: **Microsoft SQL Server**.
 - Source ingestion: **file-based**.
 - Processing style: **batch**.
-- Bronze and Silver baseline load strategy: **full load**.
-- Baseline reload method: **`TRUNCATE` + `INSERT`**.
+- Bronze and Silver load strategy: **full refresh**.
+- Bronze refresh method: **`TRUNCATE TABLE` + `BULK INSERT`**.
+- Silver refresh method: **`TRUNCATE TABLE` + `INSERT`** from Bronze.
+- Gold serving method: **SQL views** over trusted Silver data; no separate physical Gold load.
 - Historization / Slowly Changing Dimension Type 2: **not required**.
 - Change Data Capture (CDC): **out of scope**.
 - Incremental loading: **out of scope for the baseline**.
-- Gold is exposed primarily through **business-ready SQL views**.
 
 These are deliberate project constraints rather than general recommendations for every production warehouse.
 
@@ -136,7 +139,7 @@ These are deliberate project constraints rather than general recommendations for
 
 ## 6. Out of Scope for the Baseline
 
-The following are intentionally excluded unless added later as explicit portfolio extensions:
+The following are intentionally excluded:
 
 - real-time or streaming ingestion;
 - CDC-based pipelines;
@@ -148,7 +151,7 @@ The following are intentionally excluded unless added later as explicit portfoli
 - containerization;
 - production alerting/monitoring platforms.
 
-The purpose of the baseline is to demonstrate strong SQL data-engineering fundamentals before adding additional tooling.
+The purpose of the baseline is to demonstrate strong SQL data-engineering fundamentals without unrelated tool expansion.
 
 ---
 
@@ -157,7 +160,7 @@ The purpose of the baseline is to demonstrate strong SQL data-engineering fundam
 A task is considered complete only when the relevant evidence exists:
 
 1. the requirement or problem is understood;
-2. the implementation is completed independently;
+2. the implementation is completed;
 3. the result is validated;
 4. relevant edge cases or failure conditions are considered;
 5. code and documentation follow project standards;
