@@ -1,142 +1,125 @@
 # SQL Data Engineering Portfolio
 
-A connected SQL Server portfolio track covering **data warehousing**, **exploratory data analysis**, and **advanced SQL analytics**.
+A connected SQL Server portfolio that moves one supplied CRM/ERP sales dataset through **data warehousing, exploratory analysis, and advanced analytical reporting**.
 
-The projects follow the learning sequence taught by **Data with Baraa**, but this repository maintains an independent, version-controlled implementation with explicit requirements, architecture decisions, validation, documentation, engineering learnings, and clear scope boundaries.
-
-> **10-second summary:** Project 01 turns six CRM/ERP CSV sources into a validated Bronze/Silver/Gold SQL Server warehouse. Project 02 consumes the Gold star schema through six EDA stages: metadata, dimensions, dates, measures, magnitude and ranking. Project 03 will extend the same model with advanced SQL analytics.
+> **10-second summary:** six CRM/ERP source files are modeled through Bronze/Silver/Gold into a validated star schema, explored with six EDA scripts, then analyzed with window functions, CTEs, segmentation and two reusable Gold reporting views. All three project phases are complete.
 
 ## Portfolio Track
 
 | Project | Focus | Status |
 |---|---|---|
-| [01 - SQL Data Warehouse](01_data_warehouse/) | CRM + ERP ingestion, Bronze/Silver/Gold architecture, Data Quality, integration, dimensional modeling and lineage | **Complete** |
-| [02 - Exploratory Data Analysis](02_exploratory_data_analysis/) | Database exploration, dimensions, date ranges, measures, magnitude and ranking analysis | **Complete** |
-| [03 - Advanced Data Analytics](03_advanced_data_analytics/) | Trends, cumulative analysis, performance analysis, segmentation, part-to-whole and reporting views | Planned |
+| [01 - SQL Data Warehouse](01_data_warehouse/) | ingestion, Bronze/Silver/Gold architecture, Data Quality, integration, dimensional modeling, lineage | **Complete** |
+| [02 - Exploratory Data Analysis](02_exploratory_data_analysis/) | metadata, dimensions, date ranges, measures, magnitude, ranking | **Complete** |
+| [03 - Advanced Data Analytics](03_advanced_data_analytics/) | time analysis, cumulative metrics, performance benchmarking, part-to-whole, segmentation, reusable reports | **Complete** |
 
-## Completed Data Warehouse
-
-### Architecture
+## End-to-End Architecture
 
 ```mermaid
 flowchart LR
-    CRM[CRM CSV files] --> B[Bronze\nRaw source-aligned tables]
+    CRM[CRM CSV files] --> B[Bronze\nraw source-aligned tables]
     ERP[ERP CSV files] --> B
-    B --> S[Silver\nCleaned + standardized tables]
-    S --> G[Gold\nBusiness-ready analytical views]
-    G --> EDA[EDA / Ad-hoc SQL]
-    G --> BI[BI / Reporting]
-    G --> ML[Downstream ML]
+    B --> S[Silver\ncleaned + standardized tables]
+    S --> G[Gold\nstar-schema views]
+    G --> EDA[Exploratory SQL]
+    G --> ADV[Advanced analytics]
+    ADV --> CR[gold.report_customers]
+    ADV --> PR[gold.report_products]
 ```
 
-### Dataset and validated scale
+The portfolio intentionally keeps the technology surface small: **SQL Server + T-SQL + Git/GitHub**. The engineering evidence is in the data model, SQL, validation, lineage, documentation and reasoning rather than in unrelated tooling.
 
-The accepted Gold snapshot contains:
+## Evidence at a Glance
 
-| Gold object | Rows |
-|---|---:|
-| `gold.dim_customers` | **18,484** |
-| `gold.dim_products` | **295 current products** |
-| `gold.fact_sales` | **60,398 sales lines** |
+### 1. Data Warehouse
 
-These numbers describe the supplied learning dataset only. They are not presented as production-scale workload evidence.
+The completed warehouse integrates CRM and ERP into three business-facing Gold views:
 
-### What is implemented
+| Gold object | Validated grain | Rows |
+|---|---|---:|
+| `gold.dim_customers` | one row per CRM customer | **18,484** |
+| `gold.dim_products` | one row per current product | **295** |
+| `gold.fact_sales` | one row per source order/product sales line | **60,398** |
 
-- six source-aligned Bronze tables and `bronze.load_bronze`
-- six cleansed Silver tables and `silver.load_silver`
-- Bronze, Silver and Gold validation scripts
-- Gold analytical views `dim_customers`, `dim_products`, and `fact_sales`
-- explicit grain and dimensional relationships
-- source precedence and integration-key decisions
-- source-to-Gold lineage and integration documentation
-- star-schema documentation
-- column-level Gold data catalog
-- phase-based engineering learning journal
+Implemented evidence includes:
 
-## Completed Exploratory Data Analysis
+- six source-aligned Bronze tables and `bronze.load_bronze`;
+- six cleaned Silver tables and `silver.load_silver`;
+- Gold dimensional views with explicit grain and source precedence;
+- Bronze/Silver/Gold validation queries;
+- architecture, lineage, integration models and a Gold data catalog;
+- a phase-based engineering learning journal.
 
-The second project uses the Gold layer as a read-only analytical interface rather than rebuilding the data.
+Start with the [Data Warehouse README](01_data_warehouse/README.md).
 
-Implemented EDA sequence:
+### 2. Exploratory Data Analysis
+
+Six focused SQL scripts profile the Gold model before more complex analysis:
 
 ```text
-Database metadata
-      -> dimensions
-      -> date boundaries
-      -> key measures
-      -> magnitude analysis
-      -> ranking analysis
+Database -> Dimensions -> Dates -> Measures -> Magnitude -> Ranking
 ```
 
-Repository evidence includes:
-
-- six executable T-SQL analysis scripts;
-- a query catalog mapping questions to SQL;
-- documented dataset findings and interpretation caveats;
-- a six-part learning journal covering grain, dimensions/measures, `COUNT DISTINCT`, joins, grouping and ranking semantics.
-
-Selected reproducible snapshot metrics:
+Selected reproducible snapshot findings:
 
 | Metric | Value |
 |---|---:|
 | Total sales | **29,356,250** |
 | Distinct orders | **27,659** |
 | Total quantity | **60,423** |
-| Customers | **18,484** |
-| Current products | **295** |
 | Order-date range | **2010-12-29 -> 2014-01-28** |
+| Largest named customer market | **United States - 7,482 customers** |
+| Highest-revenue product | **Mountain-200 Black- 46 - 1,373,454** |
 
-Start with the [EDA project README](02_exploratory_data_analysis/README.md) or [EDA findings](02_exploratory_data_analysis/docs/findings.md).
+Start with the [EDA README](02_exploratory_data_analysis/README.md) or [EDA findings](02_exploratory_data_analysis/docs/findings.md).
 
-## Technical Stack by System Role
+### 3. Advanced Data Analytics
 
-| System role | Implementation |
+The final phase builds higher-level analytical patterns on the same Gold facts and dimensions:
+
+- change-over-time analysis;
+- cumulative running metrics;
+- product performance vs. historical average and prior year;
+- category contribution to total sales;
+- product and customer segmentation;
+- reusable `gold.report_customers` and `gold.report_products` views.
+
+Selected snapshot results:
+
+| Result | Value |
+|---|---:|
+| Customer report rows | **18,484** |
+| Sold-product report rows | **130** |
+| VIP / Regular / New customers | **1,655 / 2,198 / 14,631** |
+| High / Mid / Low product performers | **66 / 58 / 6** |
+| Bikes share of sales | **96.46%** |
+
+`gold.report_products` is intentionally fact-anchored and therefore contains **products with sales**, not all 295 current products in `gold.dim_products`.
+
+Start with the [Advanced Analytics README](03_advanced_data_analytics/README.md).
+
+## Skills Demonstrated
+
+| Area | Repository evidence |
 |---|---|
-| **Connect / Ingestion** | CSV source files loaded into SQL Server Bronze |
-| **Buffer / Raw preservation** | Bronze source-aligned tables preserve the landing boundary |
-| **Processing** | T-SQL cleansing, standardization, integration and analytical shaping |
-| **Storage** | Microsoft SQL Server |
-| **Modeling / Serving** | Silver integration + Gold dimensional views |
-| **Data Quality** | layer-specific validation scripts, key/cardinality and row-preservation checks |
-| **Analytics** | T-SQL EDA over Gold: metadata, dimensions, dates, measures, grouping and ranking |
-| **Orchestration** | not implemented; loading is procedure-driven and manually executed |
-| **Observability** | validation queries and runtime checks; no production monitoring stack is claimed |
-| **Documentation** | requirements, ADR-style decisions, lineage, data model, data catalog, EDA findings and learning journals |
+| **SQL / T-SQL** | joins, CTEs, subqueries, aggregates, window functions, `LAG`, `ROW_NUMBER`, views, stored procedures |
+| **Data Engineering** | source ingestion, layered architecture, cleansing, integration, dimensional modeling, explicit grain |
+| **Data Quality** | row reconciliation, key/cardinality checks, referential checks, measure preservation, report validation |
+| **Analytics** | EDA, time-series aggregation, running totals, benchmarking, part-to-whole, segmentation, KPI reports |
+| **Documentation** | requirements, architecture decisions, lineage, data catalog, query catalogs, report contracts, learning journals |
+| **Engineering judgment** | scope boundaries, source precedence, failure modes, limitations and evidence-backed claims |
 
-## Engineering Decisions and Constraints
+## Technical Review Path
 
-This project intentionally keeps the learning scenario bounded.
+For a fast recruiter or technical review:
 
-- **Bronze preserves source fidelity.** Cleansing belongs downstream.
-- **Silver standardizes before integration.** Technical validity alone is not enough; values must also be plausible and join-ready.
-- **Gold exposes business objects with explicit grain.** A view that returns rows is not automatically a valid analytical model.
-- **Data Quality precedes analytics.** Successful SQL execution is not treated as proof that data is correct.
-- **EDA consumes Gold rather than source tables.** Analytical users should not have to reconstruct CRM/ERP integration logic.
-- **Fact grain controls metric definitions.** `COUNT(order_number)` and `COUNT(DISTINCT order_number)` intentionally answer different questions.
-- **Full refresh is accepted for this scope.** There is no claim of CDC, incremental orchestration, SCD infrastructure or production SLA handling.
-- **Gold uses views.** The project does not pretend to implement a production semantic layer or serving platform.
-- **Surrogate-key behavior is snapshot-scoped.** Stability across production reloads is not claimed.
-
-## What I Learned Building It
-
-The repository uses project-specific learning journals rather than treating course completion as the evidence.
-
-Data Warehouse lessons include:
-
-- requirements and architecture choices need to be explicit before transformation SQL;
-- ingestion must be reconciled rather than assumed complete;
-- joins must be checked for cardinality and row multiplication;
-- dimensions and facts require explicit grain and key semantics.
-
-EDA adds:
-
-- explore schema metadata before business values;
-- distinguish dimensions and measures by analytical role, not only data type;
-- validate fact grain before counting orders or other entities;
-- interpret `DATEDIFF` and dynamic date calculations precisely;
-- treat `NULL` groups and join population deliberately;
-- choose ranking functions based on tie semantics.
+1. [This README](README.md) - portfolio scope and evidence boundaries
+2. [Data Warehouse README](01_data_warehouse/README.md) - architecture and implementation
+3. [Gold star schema](01_data_warehouse/docs/data_model/gold_star_schema.webp) - final analytical model
+4. [Gold data catalog](01_data_warehouse/docs/data_catalog/gold_data_catalog.md) - base-view semantics
+5. [EDA query catalog](02_exploratory_data_analysis/docs/query_catalog.md) - questions mapped to SQL
+6. [Advanced Analytics README](03_advanced_data_analytics/README.md) - final analytical layer
+7. [Advanced report catalog](03_advanced_data_analytics/docs/report_catalog.md) - reusable report-view contract
+8. [Advanced validation](03_advanced_data_analytics/tests/01_validate_advanced_analytics.sql) - report grain and reconciliation checks
 
 ## Repository Structure
 
@@ -153,46 +136,46 @@ sql-data-engineering-portfolio/
 │   ├── learnings/
 │   └── scripts/
 ├── 03_advanced_data_analytics/
+│   ├── docs/
+│   ├── learnings/
+│   ├── scripts/
+│   └── tests/
 ├── ACKNOWLEDGEMENTS.md
 ├── LICENSE
 ├── .editorconfig
 └── .gitignore
 ```
 
-## Suggested Review Path
-
-For a fast recruiter/technical review:
-
-1. [Repository overview](README.md) - portfolio scope and evidence boundaries
-2. [EDA README](02_exploratory_data_analysis/README.md) - completed analytical workflow and selected findings
-3. [EDA query catalog](02_exploratory_data_analysis/docs/query_catalog.md) - business questions mapped to executable SQL
-4. [EDA learning journal](02_exploratory_data_analysis/learnings/README.md) - grain, aggregation, join and ranking reasoning
-5. [Data Warehouse README](01_data_warehouse/README.md) - upstream warehouse architecture and execution path
-6. [Gold star schema](01_data_warehouse/docs/data_model/gold_star_schema.drawio) - analytical model
-7. [Gold data catalog](01_data_warehouse/docs/data_catalog/gold_data_catalog.md) - consumer-facing schema semantics
-8. [Validation scripts](01_data_warehouse/tests/) - explicit Data Quality evidence
-
-## Technology
+## Technology and Runtime
 
 - Microsoft SQL Server
 - T-SQL
 - SQL Server Management Studio (SSMS)
-- CSV source files
 - Git / GitHub
 - diagrams.net / Draw.io
 
+The analytics scripts use `DATETRUNC`, so **SQL Server 2022+** is the practical runtime baseline for the complete portfolio without query rewrites.
+
+## Evidence Boundaries
+
+This repository is a **learning and portfolio implementation**, not a claim of production Data Engineering employment experience.
+
+Deliberate scope limits include:
+
+- local full-refresh loading rather than CDC/incremental orchestration;
+- no production scheduler, SLA or monitoring stack;
+- view-based Gold serving rather than a materialized semantic platform;
+- snapshot-scoped `ROW_NUMBER()` surrogate keys;
+- supplied course data rather than proprietary production data;
+- analytical report `age` and `recency` use `GETDATE()` and are therefore time-dependent;
+- report lifespan uses SQL Server `DATEDIFF(MONTH, ...)` boundary semantics.
+
+These limits are documented so the repository shows what was actually built without overstating the evidence.
+
 ## Attribution
 
-The learning baseline, project scenario, and source datasets originate from **Data with Baraa's SQL course and project materials**. This repository documents my implementation process, validation, documentation and targeted refinements. See [`ACKNOWLEDGEMENTS.md`](ACKNOWLEDGEMENTS.md).
-
-## TL;DR
-
-This repository is not presented as production Data Engineering experience. It is evidence that I can reason across a connected SQL workflow:
-
-**source boundaries -> ingestion -> cleansing -> integration -> dimensional modeling -> Data Quality -> exploratory analytics -> advanced analytics**
-
-The first two projects are implemented; advanced analytics is the next scoped phase.
+The learning scenario, project sequence, reference implementation and source datasets originate from **Data with Baraa's SQL course and project materials**. This repository contains an independent implementation, validation work, documentation and targeted correctness/maintainability refinements. See [`ACKNOWLEDGEMENTS.md`](ACKNOWLEDGEMENTS.md).
 
 ## License
 
-This repository is licensed under the [MIT License](LICENSE).
+MIT License - see [`LICENSE`](LICENSE).
