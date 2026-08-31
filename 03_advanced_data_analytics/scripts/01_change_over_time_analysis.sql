@@ -1,67 +1,61 @@
 -- 01 - CHANGE-OVER-TIME ANALYSIS
--- Trends over time using date dimensions and aggregated measures.
--- Track trends and Seasonality of Data
--- [Measure] by [Date Dimension]
--- Change over Time
--- In the fact tables we have the dates
+-- Track sales, customer activity and quantity across time grains.
 
+USE DataWarehouse;
+GO
 
-
--- Analyze the sales performance over time
+-- Yearly performance.
 SELECT
-YEAR(order_date) AS order_year,
-SUM(sales_amount) AS total_sales,
-COUNT(DISTINCT customer_key) AS total_customers,
-SUM(quantity) AS total_quantity
+    YEAR(order_date) AS order_year,
+    SUM(sales_amount) AS total_sales,
+    COUNT(DISTINCT customer_key) AS total_customers,
+    SUM(quantity) AS total_quantity
 FROM gold.fact_sales
 WHERE order_date IS NOT NULL
 GROUP BY YEAR(order_date)
-ORDER BY YEAR(order_date)
+ORDER BY order_year;
 
-
--- BY YEAR/MONTH
+-- Year/month performance.
 SELECT
-YEAR(order_date) AS order_year,
-MONTH(order_date) AS order_month,
-SUM(sales_amount) AS total_sales,
-COUNT(DISTINCT customer_key) AS total_customers,
-SUM(quantity) AS total_quantity
+    YEAR(order_date) AS order_year,
+    MONTH(order_date) AS order_month,
+    SUM(sales_amount) AS total_sales,
+    COUNT(DISTINCT customer_key) AS total_customers,
+    SUM(quantity) AS total_quantity
 FROM gold.fact_sales
 WHERE order_date IS NOT NULL
 GROUP BY YEAR(order_date), MONTH(order_date)
-ORDER BY YEAR(order_date), MONTH(order_date)
+ORDER BY order_year, order_month;
 
-
--- BY MONTH
+-- Monthly performance using a true date value for the analytical grain.
 SELECT
-DATETRUNC(month, order_date) AS order_date,
-SUM(sales_amount) AS total_sales,
-COUNT(DISTINCT customer_key) AS total_customers,
-SUM(quantity) AS total_quantity
+    DATETRUNC(MONTH, order_date) AS order_month,
+    SUM(sales_amount) AS total_sales,
+    COUNT(DISTINCT customer_key) AS total_customers,
+    SUM(quantity) AS total_quantity
 FROM gold.fact_sales
 WHERE order_date IS NOT NULL
-GROUP BY DATETRUNC(month, order_date)
-ORDER BY DATETRUNC(month, order_date)
+GROUP BY DATETRUNC(MONTH, order_date)
+ORDER BY order_month;
 
--- BY YEAR
+-- Yearly performance using DATETRUNC.
 SELECT
-DATETRUNC(year, order_date) AS order_date,
-SUM(sales_amount) AS total_sales,
-COUNT(DISTINCT customer_key) AS total_customers,
-SUM(quantity) AS total_quantity
+    DATETRUNC(YEAR, order_date) AS order_year,
+    SUM(sales_amount) AS total_sales,
+    COUNT(DISTINCT customer_key) AS total_customers,
+    SUM(quantity) AS total_quantity
 FROM gold.fact_sales
 WHERE order_date IS NOT NULL
-GROUP BY DATETRUNC(year, order_date)
-ORDER BY DATETRUNC(year, order_date)
+GROUP BY DATETRUNC(YEAR, order_date)
+ORDER BY order_year;
 
-
--- SPECIFIC FORMAT -- Problem = String in Date is not sortable
+-- Formatted labels are presentation strings, so sort them by the underlying date.
 SELECT
-FORMAT(order_date, 'yyyy-MMM') AS order_date,
-SUM(sales_amount) AS total_sales,
-COUNT(DISTINCT customer_key) AS total_customers,
-SUM(quantity) AS total_quantity
+    FORMAT(order_date, 'yyyy-MMM') AS order_month_label,
+    SUM(sales_amount) AS total_sales,
+    COUNT(DISTINCT customer_key) AS total_customers,
+    SUM(quantity) AS total_quantity
 FROM gold.fact_sales
 WHERE order_date IS NOT NULL
 GROUP BY FORMAT(order_date, 'yyyy-MMM')
-ORDER BY FORMAT(order_date, 'yyyy-MMM')
+ORDER BY MIN(order_date);

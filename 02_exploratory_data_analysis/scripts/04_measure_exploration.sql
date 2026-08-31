@@ -1,41 +1,58 @@
--- 04 MEASURE EXPLORATION
+-- 04 - MEASURE EXPLORATION
+-- Establish the core business measures before slicing them by dimensions.
 
--- Measures are aggregated
+USE DataWarehouse;
+GO
 
--- Find the Total Sales
-SELECT SUM(sales_amount) total_sales FROM gold.fact_sales
+-- Total sales.
+SELECT SUM(sales_amount) AS total_sales
+FROM gold.fact_sales;
 
--- Find how many items are sold
-SELECT SUM(quantity) total_quantity FROM gold.fact_sales
+-- Total quantity sold.
+SELECT SUM(quantity) AS total_quantity
+FROM gold.fact_sales;
 
--- Find the average selling price
-SELECT AVG(price) avg_price FROM gold.fact_sales
+-- Average line-level selling price.
+-- CAST avoids SQL Server integer AVG truncation because price is stored as INT.
+SELECT AVG(CAST(price AS DECIMAL(18, 2))) AS avg_price
+FROM gold.fact_sales;
 
--- Find the Total number of orders
-SELECT COUNT(order_number) total_orders FROM gold.fact_sales
-SELECT COUNT(DISTINCT order_number) total_orders FROM gold.fact_sales
+-- Compare sales-line count with distinct business orders.
+SELECT COUNT(order_number) AS sales_line_count
+FROM gold.fact_sales;
 
--- Find the total number of products
-SELECT COUNT(product_name) AS total_products_by_name FROM gold.dim_products
-SELECT COUNT(DISTINCT product_key) AS total_products_by_key FROM gold.dim_products
+SELECT COUNT(DISTINCT order_number) AS total_orders
+FROM gold.fact_sales;
 
--- Find the total number of customers
-SELECT COUNT(customer_key) AS total_customers FROM gold.dim_customers
+-- Product counts.
+SELECT COUNT(product_name) AS total_product_rows
+FROM gold.dim_products;
 
--- Find the toal number of customers that has placed an order
-SELECT COUNT(DISTINCT customer_key) AS total_customers FROM gold.fact_sales
+SELECT COUNT(DISTINCT product_key) AS total_products
+FROM gold.dim_products;
 
+-- Customer counts.
+SELECT COUNT(customer_key) AS total_customers
+FROM gold.dim_customers;
 
--- Generate a Report that shows all key metrics of the business
+SELECT COUNT(DISTINCT customer_key) AS customers_with_sales
+FROM gold.fact_sales;
 
-SELECT 'Total Sales' AS measure_name, SUM(sales_amount) AS measure_value FROM gold.fact_sales
+-- Consolidated business metric snapshot.
+SELECT 'Total Sales' AS measure_name, CAST(SUM(sales_amount) AS DECIMAL(18, 2)) AS measure_value
+FROM gold.fact_sales
 UNION ALL
-SELECT 'Total Quantity' AS measure_name, SUM(quantity) AS measure_value FROM gold.fact_sales
+SELECT 'Total Quantity', CAST(SUM(quantity) AS DECIMAL(18, 2))
+FROM gold.fact_sales
 UNION ALL
-SELECT 'Average Price', AVG(price) FROM gold.fact_sales
+SELECT 'Average Price', AVG(CAST(price AS DECIMAL(18, 2)))
+FROM gold.fact_sales
 UNION ALL
-SELECT 'Total Nr. Orders', COUNT(DISTINCT order_number) total_orders FROM gold.fact_sales
+SELECT 'Total Orders', CAST(COUNT(DISTINCT order_number) AS DECIMAL(18, 2))
+FROM gold.fact_sales
 UNION ALL
-SELECT 'Total Nr. Products', COUNT(DISTINCT product_key) AS total_products_by_key FROM gold.dim_products
+SELECT 'Total Products', CAST(COUNT(DISTINCT product_key) AS DECIMAL(18, 2))
+FROM gold.dim_products
 UNION ALL
-SELECT 'Total Nr.Customers', COUNT(customer_key) AS total_customers FROM gold.dim_customers
+SELECT 'Total Customers', CAST(COUNT(customer_key) AS DECIMAL(18, 2))
+FROM gold.dim_customers;

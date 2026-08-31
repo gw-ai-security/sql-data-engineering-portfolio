@@ -1,11 +1,19 @@
--- 02 - DIMENSIONS EXPLORATION
+-- 02 - DIMENSION EXPLORATION
+-- Discover dimension domains and product hierarchy granularity.
 
--- Explore All Countries our customers come from
+USE DataWarehouse;
+GO
 
-SELECT DISTINCT country FROM gold.dim_customers
+-- Explore all countries represented in the customer dimension.
+SELECT DISTINCT
+    country
+FROM gold.dim_customers
+ORDER BY country;
 
-
--- Explore All Categories "The major Divisions"
-
-SELECT DISTINCT category, subcategory, product_name FROM gold.dim_products
-ORDER BY 1,2,3
+-- Explore the product hierarchy from category to individual product.
+SELECT DISTINCT
+    category,
+    subcategory,
+    product_name
+FROM gold.dim_products
+ORDER BY category, subcategory, product_name;

@@ -1,13 +1,10 @@
 -- 03 - DATE RANGE EXPLORATION
+-- Identify temporal boundaries and the time span represented by the dataset.
 
--- Identify the earliest and latest dates (boundaries)
--- Understand the scope of data and the timespan
--- MIN/MAX[Date Dimension]
+USE DataWarehouse;
+GO
 
--- Find the date of the first and last Order
--- How many years of sales are availbale
-
-
+-- Find the first and last order dates and the number of calendar-year boundaries crossed.
 SELECT
     MIN(order_date) AS first_order_date,
     MAX(order_date) AS last_order_date,
@@ -18,11 +15,11 @@ SELECT
     ) AS years_of_sales
 FROM gold.fact_sales;
 
--- Find the youngest and the oldest customer
-
+-- Find the oldest and youngest customer birthdates.
+-- DATEDIFF(YEAR, ...) counts year boundaries and is therefore an approximate age.
 SELECT
-MIN(birthdate) AS oldest_birhtdate,
-DATEDIFF(year, MIN(birthdate), GETDATE()) AS oldest_age,
-MAX(birthdate) AS youngest_birthdate,
-DATEDIFF(year, MAX(birthdate), GETDATE()) AS youngest_age
-FROM gold.dim_customers
+    MIN(birthdate) AS oldest_birthdate,
+    DATEDIFF(YEAR, MIN(birthdate), GETDATE()) AS oldest_age_approx,
+    MAX(birthdate) AS youngest_birthdate,
+    DATEDIFF(YEAR, MAX(birthdate), GETDATE()) AS youngest_age_approx
+FROM gold.dim_customers;

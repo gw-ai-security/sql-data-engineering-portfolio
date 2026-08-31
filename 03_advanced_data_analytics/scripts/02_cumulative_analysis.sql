@@ -1,27 +1,28 @@
 -- 02 - CUMULATIVE ANALYSIS
--- Running totals and moving analytical measures over time.
--- Aggregate Data progressively over time
--- Understand growth or decline over Time
--- [Cumulative Measure] by [Date Dimension]
+-- Calculate an expanding running total and expanding average over monthly aggregates.
 
--- Calculate the total sales per month
--- and the running total of sales over time
+USE DataWarehouse;
+GO
+
+WITH monthly_sales AS (
+    SELECT
+        DATETRUNC(MONTH, order_date) AS order_month,
+        SUM(sales_amount) AS total_sales,
+        AVG(CAST(price AS DECIMAL(18, 2))) AS avg_price
+    FROM gold.fact_sales
+    WHERE order_date IS NOT NULL
+    GROUP BY DATETRUNC(MONTH, order_date)
+)
 SELECT
-order_date,
-total_sales,
--- window function - running total by window
-SUM(total_sales) OVER (ORDER BY order_date) AS running_total_sales,
-AVG(avg_price) OVER (ORDER BY order_date) AS moving_average_price
-FROM
-(
-SELECT
-DATETRUNC(month, order_date) AS order_date,
-SUM(sales_amount) AS total_sales,
-AVG(price) AS avg_price
-FROM gold.fact_sales
-WHERE order_date IS NOT NULL
-GROUP BY DATETRUNC(month, order_date)
-)t
-
-
--- Cumulative Aggregation shows progess
+    order_month,
+    total_sales,
+    SUM(total_sales) OVER (
+        ORDER BY order_month
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_total_sales,
+    AVG(avg_price) OVER (
+        ORDER BY order_month
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS moving_average_price
+FROM monthly_sales
+ORDER BY order_month;
